@@ -1,0 +1,179 @@
+.ff-card {
+  display: flex;
+  align-items: stretch;
+  min-width: 168px;
+  max-width: 220px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(99, 81, 128, 0.12);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  position: relative;
+}
+
+.ff-card__accent {
+  width: 5px;
+  flex-shrink: 0;
+  border-radius: 12px 0 0 12px;
+}
+
+.ff-card__accent--sensor {
+  background: linear-gradient(180deg, #c2410c 0%, #ea580c 100%);
+}
+
+.ff-card__accent--condition {
+  background: linear-gradient(180deg, #1d4ed8 0%, #3b82f6 100%);
+}
+
+.ff-card__accent--action {
+  background: linear-gradient(180deg, #15803d 0%, #22c55e 100%);
+}
+
+.ff-card__body {
+  flex: 1;
+  padding: 10px 12px 12px;
+  min-width: 0;
+}
+
+.ff-card__category {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+}
+
+.ff-card__category--sensor {
+  color: #9a3412;
+}
+
+.ff-card__category--condition {
+  color: #1d4ed8;
+}
+
+.ff-card__category--action {
+  color: #15803d;
+}
+
+.ff-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.ff-card__icon,
+.ff-card__icon-slot {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  color: #c2410c;
+}
+
+.ff-card__icon--sensor {
+  color: #c2410c;
+}
+
+.ff-card--condition .ff-card__title-row {
+  margin-bottom: 0;
+}
+
+.ff-card__icon--action {
+  color: #16a34a;
+}
+
+.ff-card__title-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ff-card__value-large {
+  font-size: 20px;
+  font-weight: 800;
+  color: #c2410c;
+  letter-spacing: -0.02em;
+  padding-left: 30px;
+}
+
+.ff-card--sensor-humidity .ff-card__value-large,
+.ff-card--sensor-humidity .ff-card__icon--sensor {
+  color: #0369a1;
+}
+
+
+.ff-card__prompt {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 8px;
+  line-height: 1.35;
+}
+
+.ff-card__threshold {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4c1d95;
+  background: #ede9fe;
+  border: 1px solid #ddd6fe;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.ff-card__status-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #334155;
+}
+
+.ff-card__status-label {
+  font-weight: 600;
+}
+
+.ff-card__pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #d1fae5;
+  color: #047857;
+  border: 1px solid #6ee7b7;
+}
+
+.ff-card__quote {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.45;
+  margin-top: 4px;
+  padding-left: 2px;
+}
+
+.ff-handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: #94a3b8 !important;
+  border: 2px solid #fff !important;
+}
+
+.ff-handle--left {
+  left: -5px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.ff-handle--right {
+  right: -5px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.ff-card--action-alarm .ff-card__icon-slot {
+  display: block;
+}
