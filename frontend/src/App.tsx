@@ -7,6 +7,7 @@ import Simulation from './page/Simulation';
 import Login from './page/Login';
 import Sign from './page/Sign';
 import Template from './page/Template';
+import Sensor from './page/Sensor';
 import Layout from './components/Layout';
 
 export default function App(){
@@ -23,7 +24,8 @@ export default function App(){
       <Route path="/Calendar" element={<Calendar />}/>
       <Route path="/Simulation" element={<Simulation />}/>
       <Route path="/Template" element={<Template />}/>
-      
+      <Route path="/Sensor" element={<Sensor />}/>      
+
       </Route>
     </Routes>
     </BrowserRouter>

@@ -12,6 +12,7 @@ export default function Topbar() {
         <NavButton label="캘린더" path="/calendar" />
         <NavButton label="시뮬레이션" path="/simulation" />
         <NavButton label="템플릿" path="/Template" />
+        <NavButton label="센서" path="/Sensor" />
       </nav>
     </header>
   );

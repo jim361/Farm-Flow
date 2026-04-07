@@ -4,7 +4,8 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 
-export default function Layour(){
+export default function Layout(){
+  
   return(
       <div style = {{flex:1, display: 'flex', flexDirection: 'column'}}>
         <Topbar/>
