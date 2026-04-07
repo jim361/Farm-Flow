@@ -9,11 +9,15 @@ import {
   ToggleLeft,
   Wind,
 } from "lucide-react";
+<<<<<<< HEAD
 import type { LibraryDevice } from "../App";
+=======
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
 
 type SensorKind = "temp" | "humidity" | "co2";
 type ControllerKind = "boiler" | "vent" | "pump";
 
+<<<<<<< HEAD
 type DeviceRegistrationPageProps = {
   onRegisterDevice: (device: LibraryDevice) => void;
 };
@@ -57,13 +61,23 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
       setControllerName("");
     }
   };
+=======
+export function DeviceRegistrationPage() {
+  const [sensor, setSensor] = useState<SensorKind>("temp");
+  const [controller, setController] = useState<ControllerKind | null>(null);
+  const [threshold, setThreshold] = useState(28);
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
 
   return (
     <>
       <div className="ff-page-head">
         <h1 className="ff-title">장치 등록</h1>
         <p className="ff-sub">
+<<<<<<< HEAD
           센서와 제어기를 등록하고 임계값 기반 자동 제어 규칙을 설정합니다.
+=======
+          센서와 제어기를 연결하고 임계값 기반 자동 제어 규칙을 설정합니다.
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
         </p>
       </div>
       <div className="dev-layout">
@@ -73,8 +87,11 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
               <label htmlFor="sn">센서 명칭</label>
               <input
                 id="sn"
+<<<<<<< HEAD
                 value={sensorName}
                 onChange={(e) => setSensorName(e.target.value)}
+=======
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
                 placeholder="예: 온실 A구역 온도 센서"
                 autoComplete="off"
               />
@@ -83,8 +100,11 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
               <label htmlFor="cn">제어기 명칭</label>
               <input
                 id="cn"
+<<<<<<< HEAD
                 value={controllerName}
                 onChange={(e) => setControllerName(e.target.value)}
+=======
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
                 placeholder="예: 구역 1 메인 보일러"
                 autoComplete="off"
               />
@@ -98,6 +118,7 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
               className={
                 "dev-type-card" + (sensor === "temp" ? " dev-type-card--on" : "")
               }
+<<<<<<< HEAD
               onClick={() =>
                 setSensor((prev) => {
                   const next = prev === "temp" ? null : "temp";
@@ -105,6 +126,9 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                   return next;
                 })
               }
+=======
+              onClick={() => setSensor("temp")}
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
             >
               <Gauge size={28} strokeWidth={1.75} />
               <span>온도 센서</span>
@@ -115,6 +139,7 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                 "dev-type-card" +
                 (sensor === "humidity" ? " dev-type-card--on" : "")
               }
+<<<<<<< HEAD
               onClick={() =>
                 setSensor((prev) => {
                   const next = prev === "humidity" ? null : "humidity";
@@ -122,6 +147,9 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                   return next;
                 })
               }
+=======
+              onClick={() => setSensor("humidity")}
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
             >
               <Droplets size={28} strokeWidth={1.75} />
               <span>습도 센서</span>
@@ -131,6 +159,7 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
               className={
                 "dev-type-card" + (sensor === "co2" ? " dev-type-card--on" : "")
               }
+<<<<<<< HEAD
               onClick={() =>
                 setSensor((prev) => {
                   const next = prev === "co2" ? null : "co2";
@@ -138,6 +167,9 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                   return next;
                 })
               }
+=======
+              onClick={() => setSensor("co2")}
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
             >
               <Cloud size={28} strokeWidth={1.75} />
               <span>CO₂ 센서</span>
@@ -152,6 +184,7 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                 "dev-type-card" +
                 (controller === "boiler" ? " dev-type-card--on" : "")
               }
+<<<<<<< HEAD
               onClick={() =>
                 setController((prev) => {
                   const next = prev === "boiler" ? null : "boiler";
@@ -159,6 +192,9 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                   return next;
                 })
               }
+=======
+              onClick={() => setController("boiler")}
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
             >
               <Flame size={28} strokeWidth={1.75} />
               <span>보일러</span>
@@ -169,6 +205,7 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                 "dev-type-card" +
                 (controller === "vent" ? " dev-type-card--on" : "")
               }
+<<<<<<< HEAD
               onClick={() =>
                 setController((prev) => {
                   const next = prev === "vent" ? null : "vent";
@@ -176,6 +213,9 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                   return next;
                 })
               }
+=======
+              onClick={() => setController("vent")}
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
             >
               <Fan size={28} strokeWidth={1.75} />
               <span>환풍기</span>
@@ -186,6 +226,7 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                 "dev-type-card" +
                 (controller === "pump" ? " dev-type-card--on" : "")
               }
+<<<<<<< HEAD
               onClick={() =>
                 setController((prev) => {
                   const next = prev === "pump" ? null : "pump";
@@ -193,6 +234,9 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                   return next;
                 })
               }
+=======
+              onClick={() => setController("pump")}
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
             >
               <Wind size={28} strokeWidth={1.75} />
               <span>관수 펌프</span>
@@ -231,7 +275,11 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
             <button type="button" className="dev-cancel">
               취소
             </button>
+<<<<<<< HEAD
             <button type="button" className="dev-submit" onClick={handleRegister}>
+=======
+            <button type="button" className="dev-submit">
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
               등록하기
             </button>
           </div>

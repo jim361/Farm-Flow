@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BrowserRouter,
@@ -9,13 +10,52 @@ import {
 } from "react-router-dom";
 import type { Edge, Node } from "@xyflow/react";
 import type { SavedUserWorkflow } from "./workflowTypes";
+=======
+<<<<<<< HEAD
+import { useState } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
 import { AppHeader } from "./components/AppHeader";
 import { DeploymentSafetyModal } from "./components/DeploymentSafetyModal";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DeviceRegistrationPage } from "./pages/DeviceRegistrationPage";
+<<<<<<< HEAD
 import { LogicBuilderPage, type LogicBuilderHandle } from "./pages/LogicBuilderPage";
 import { SchedulerPage } from "./pages/SchedulerPage";
 import { TemplatePage } from "./pages/TemplatePage";
+=======
+import { LogicBuilderPage } from "./pages/LogicBuilderPage";
+import { SchedulerPage } from "./pages/SchedulerPage";
+import { TemplatePage } from "./pages/TemplatePage";
+
+export default function App() {
+  const { pathname } = useLocation();
+  const [safetyOpen, setSafetyOpen] = useState(false);
+
+  return (
+    <div className="ff-app">
+      <AppHeader
+        showSave={pathname === "/logic-builder"}
+        onSave={() => setSafetyOpen(true)}
+      />
+      <Routes>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/logic-builder" element={<LogicBuilderPage />} />
+        <Route path="/devices" element={<DeviceRegistrationPage />} />
+        <Route path="/scheduler" element={<SchedulerPage />} />
+        <Route path="/templates" element={<TemplatePage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <DeploymentSafetyModal
+        open={safetyOpen}
+        onClose={() => setSafetyOpen(false)}
+      />
+    </div>
+  );
+}
+=======
+//frontend/src/App.tsx
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
 
 export type LibraryDevice = {
   id: string;
@@ -148,5 +188,11 @@ export default function App() {
     <BrowserRouter>
       <AppBody />
     </BrowserRouter>
+<<<<<<< HEAD
   );
 }
+=======
+  )
+};
+>>>>>>> 93e8ee811598782d8cc024c98d68795663e55466
+>>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
