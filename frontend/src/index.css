@@ -954,3 +954,75 @@ body {
   text-align: center;
   color: var(--ff-muted);
 }
+
+.ff-header-actions--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.ff-header-icons-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.ff-btn-save--stack {
+  width: 100%;
+  min-width: 138px;
+}
+
+.ff-delete-selected {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 9px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fff1f2;
+  color: #b91c1c;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ff-delete-selected:hover {
+  background: #ffe4e6;
+}
+
+.dsm-field-wrap {
+  margin-bottom: 16px;
+}
+
+.dsm-field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.dsm-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ff-border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.88rem;
+  background: #f8fafc;
+}
+
+.tpl-card--new {
+  border: 2px dashed #c4b5fd;
+}
+
+button.tpl-card {
+  border: 1px solid var(--ff-border);
+  text-align: left;
+  cursor: pointer;
+}
+
+button.tpl-card:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
