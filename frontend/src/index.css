@@ -701,7 +701,6 @@ body {
   background: linear-gradient(180deg, var(--ff-green-bright) 0%, var(--ff-forest) 100%);
 }
 
-<<<<<<< HEAD
 .tpl-actions--with-delete {
   flex-wrap: wrap;
 }
@@ -738,8 +737,6 @@ body {
   background: #e0f2fe !important;
 }
 
-=======
->>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
 /* —— Device registration —— */
 .dev-layout {
   display: grid;
@@ -993,8 +990,6 @@ body {
   text-align: center;
   color: var(--ff-muted);
 }
-<<<<<<< HEAD
-
 .ff-header-actions--stack {
   position: relative;
   flex-direction: row;
@@ -1094,5 +1089,3 @@ button.tpl-card {
 button.tpl-card:hover {
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
-=======
->>>>>>> a7b464690b865eb1de56ffd541b5b6c12af3752f
