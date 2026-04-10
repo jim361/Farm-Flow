@@ -2,13 +2,14 @@
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './page/Dashboard';
-import Calendar from './page/Calendar';
+import Schedular from './page/Schedular';
 import Simulation from './page/Simulation';
 import Login from './page/Login';
 import Sign from './page/Sign';
 import Template from './page/Template';
 import Sensor from './page/Sensor';
 import Layout from './components/Layout';
+import Addschedular from './page/Addschedular';
 
 export default function App(){
 
@@ -21,10 +22,11 @@ export default function App(){
       <Route path="/login" element={<Login />}/>
       <Route path="/Sign" element={<Sign />}/>
       <Route path="/Dashboard" element={<Dashboard />}/>
-      <Route path="/Calendar" element={<Calendar />}/>
+      <Route path="/Schedular" element={<Schedular />}/>
       <Route path="/Simulation" element={<Simulation />}/>
       <Route path="/Template" element={<Template />}/>
       <Route path="/Sensor" element={<Sensor />}/>      
+      <Route path="/add-scheduler" element={<Addschedular />}/>
 
       </Route>
     </Routes>

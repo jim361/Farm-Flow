@@ -1,4 +1,5 @@
 // src/page/Dashboard.tsx
+
 import WeatherSection from '../components/Dashboard/WeatherSection';
 import MetricsSection from '../components/Dashboard/MetricsSection';
 import CalendarSection from '../components/Dashboard/CalendarSection'

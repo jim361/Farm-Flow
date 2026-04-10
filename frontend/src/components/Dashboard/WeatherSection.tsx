@@ -1,4 +1,5 @@
 // src/components/Dsahboard/WeatherSection.tsx
+
 import DashboardCard from "./Dashboard";
 
 const WeatherSection = () => {

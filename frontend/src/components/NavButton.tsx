@@ -1,4 +1,5 @@
 // src/components/NavButton.tsx
+
 import { useNavigate } from 'react-router-dom';
 import { navButton } from '../style/Button';
 
