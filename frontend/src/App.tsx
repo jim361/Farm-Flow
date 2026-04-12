@@ -9,7 +9,6 @@ import Sign from './page/Sign';
 import Template from './page/Template';
 import Sensor from './page/Sensor';
 import Layout from './components/Layout';
-import Addschedular from './page/Addschedular';
 
 export default function App(){
 
@@ -21,12 +20,12 @@ export default function App(){
       <Route path="/" element={<h1>Start page</h1>}/>
       <Route path="/login" element={<Login />}/>
       <Route path="/Sign" element={<Sign />}/>
+      <Route path="/dashboard" element={<Dashboard />}/>
       <Route path="/Dashboard" element={<Dashboard />}/>
       <Route path="/Schedular" element={<Schedular />}/>
       <Route path="/Simulation" element={<Simulation />}/>
       <Route path="/Template" element={<Template />}/>
       <Route path="/Sensor" element={<Sensor />}/>      
-      <Route path="/add-scheduler" element={<Addschedular />}/>
 
       </Route>
     </Routes>

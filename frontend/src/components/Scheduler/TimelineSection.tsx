@@ -1,14 +1,25 @@
-// src/components/Scheduler/TimelineSection.tsx
+// 역할: 통합 타임라인 프레임 렌더링을 담당하는 래퍼 컴포넌트입니다.
 
-import DashboardCard from "../Dashboard/Dashboard";
+import SchedulerTimeline from './SchedulerTimeline';
+import type { ScheduleEventItem } from './types';
 
-const TimelineSection = () => {
+interface TimelineSectionProps {
+  todayDate: string;
+  events: ScheduleEventItem[];
+  completedEventIds: string[];
+  onToggleComplete: (eventId: string) => void;
+  onEventClick: (eventId: string) => void;
+}
+
+const TimelineSection = ({ todayDate, events, completedEventIds, onToggleComplete, onEventClick }: TimelineSectionProps) => {
   return (
-      <DashboardCard title="24시간 타임라인 (05월 03일)">
-        <div style={{ minHeight: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #ccc' }}>
-          타임라인 차트 영역
-        </div>
-      </DashboardCard>
+    <SchedulerTimeline
+      todayDate={todayDate}
+      events={events}
+      completedEventIds={completedEventIds}
+      onToggleComplete={onToggleComplete}
+      onEventClick={onEventClick}
+    />
   );
 };
 
