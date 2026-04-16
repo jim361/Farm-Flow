@@ -17,17 +17,18 @@ import Layout from './components/Layout';//
 import { LogicBuilderPage, type LogicBuilderHandle } from "./page/LogicBuilderPage";
 import { TemplatePage } from "./page/TemplatePage";
 import { fetchDevicesApi, fetchWorkflowsApi, saveWorkflowApi, deleteWorkflowApi, deleteDevicesApi } from "./api/api";
- 
+
 // LibraryDevice 타입을 api/api.ts에서 re-export (기존 import 호환 유지)
 export type { LibraryDevice } from "./api/api";
- 
+
 const DEFAULT_BUILDER_TITLE = "비주얼 로직 빌더";
- 
+
+//AppBody위치, 백엔드 연동 필수 
 function AppBody() {
   const navigate = useNavigate();
   const location = useLocation();
   const { pathname } = location;
- 
+
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [libraryDevices, setLibraryDevices] = useState<import("./api/api").LibraryDevice[]>([]);
   const [userWorkflows, setUserWorkflows] = useState<SavedUserWorkflow[]>([]);
@@ -36,7 +37,7 @@ function AppBody() {
   const [builderSnapshot, setBuilderSnapshot] = useState<{ nodes: Node[]; edges: Edge[] } | null>(null);
   const [builderSessionKey, setBuilderSessionKey] = useState(0);
   const builderRef = useRef<LogicBuilderHandle>(null);
- 
+
   /** 장치 목록 로드 */
   const fetchDevices = useCallback(async () => {
     try {
@@ -46,7 +47,7 @@ function AppBody() {
       console.error("Fetch Error:", err);
     }
   }, []);
- 
+
   /** 워크플로우 목록 로드 */
   const fetchWorkflows = useCallback(async () => {
     try {
@@ -56,13 +57,13 @@ function AppBody() {
       console.error("Workflow fetch error:", err);
     }
   }, []);
- 
+
   // 페이지 최초 진입 시 장치 + 워크플로우 목록 로드
   useEffect(() => {
     fetchDevices();
     fetchWorkflows();
   }, [fetchDevices, fetchWorkflows]);
- 
+
   // 로직 빌더 진입 시 상태 복원 로직
   const applyLocationForLogicBuilder = useCallback(() => {
     const st = location.state as { workflowId?: string; reset?: boolean } | undefined;
@@ -88,6 +89,47 @@ function AppBody() {
     }
   }, [location.state, navigate, userWorkflows]);
 
+  /** 워크플로우 저장 (handleConfirmSave) */
+  const handleConfirmSave = useCallback(async (name: string) => {
+    const g = builderRef.current?.getGraph();
+    if (!g) return;
+    const flowData = JSON.stringify({ nodes: g.nodes, edges: g.edges });
+    try {
+      await saveWorkflowApi(name, flowData);
+      await fetchWorkflows();
+      setSafetyOpen(false);
+      navigate("/templates");
+    } catch (err) {
+      console.error("Save error:", err);
+    }
+  }, [navigate, fetchWorkflows]);
+
+  /** 워크플로우 삭제 (handleDeleteWorkflow) */
+  const handleDeleteWorkflow = useCallback(async (id: string) => {
+    try {
+      await deleteWorkflowApi(id);
+      await fetchWorkflows();
+      if (activeWorkflowId === id) {
+        setActiveWorkflowId(null);
+        setBuilderSnapshot(null);
+        setBuilderTitle(DEFAULT_BUILDER_TITLE);
+        setBuilderSessionKey((k) => k + 1);
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
+  }, [fetchWorkflows, activeWorkflowId]);
+
+  /** 장치 삭제 (handleDeleteLibraryDevices) */
+  const handleDeleteLibraryDevices = useCallback(async (ids: string[]) => {
+    try {
+      await deleteDevicesApi(ids);
+      setLibraryDevices((prev) => prev.filter((d) => !ids.includes(d.id)));
+    } catch (err) {
+      console.error("Device delete error:", err);
+    }
+  }, []);
+  
     //수정
     
 return (
@@ -149,29 +191,9 @@ onDeleteLibraryDevices={handleDeleteLibraryDevices}
 
 path="/devices"
 
-element={
+element={ <DeviceRegistrationPage onRegisterDevice={async () => { await fetchDevices();}}/> } />
 
-<DeviceRegistrationPage
-
-onRegisterDevice={async () => {
-
-await fetchDevices();
-
-}}
-
-/>
-
-}
-
-/>
-
-<Route path="/scheduler" element={<Calendar />} />
-
-<Route
-
-path="/templates"
-
-element={
+<Route path="/templates" element={
 
 <TemplatePage userWorkflows={userWorkflows} onDeleteWorkflow={handleDeleteWorkflow} />
 
@@ -189,18 +211,9 @@ element={
 </Routes>
   
 
-<DeploymentSafetyModal
-
-open={safetyOpen}
-
-onClose={() => setSafetyOpen(false)}
-
-onConfirmDeploy={handleConfirmSave}
-
-/>
+<DeploymentSafetyModal open={safetyOpen} onClose={() => setSafetyOpen(false)} onConfirmDeploy={handleConfirmSave}/>
 
 </div>
-
 );
 
 export default function App() {
