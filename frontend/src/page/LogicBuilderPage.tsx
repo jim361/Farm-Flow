@@ -356,7 +356,7 @@ export const LogicBuilderPage = forwardRef<LogicBuilderHandle, LogicBuilderPageP
                       onMouseUp={() => toggleLibSelect(item.id)}
                       onDragStart={(e) => onPaletteDragStart(e, "action", item.name, "제어기")}
                     >
-                      <span className="ff-bar-glyph">A</span>
+                      <span className="ff-bar-glyph">C</span>
                       <span className="ff-bar-label">{item.name}</span>
                     </div>
                   ))}
