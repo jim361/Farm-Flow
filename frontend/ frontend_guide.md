@@ -67,7 +67,7 @@ status 스케줄: uid (SCH-XXXX), start_time, end_time, days_of_week, status
 ## 3. 역할 분담 (Role Division)
 
 ### 👤 개발자 B (안수빈 - UI & Layout Specialist)
-- **담당 폴더:** `src/pages/Dashboard/`, `src/pages/Calendar/`, `src/components/Sidebar`, `src/components/Topbar/`
+- **담당 폴더:** `src/pages/Dashboard/`, `src/pages/Schedular/`, `src/components/Sidebar`, `src/components/Topbar/`
 - **핵심 업무:** - **조건부 레이아웃 설계:** Topbar는 전역 노출, Sidebar는 대시보드 페이지에서만 나타나도록 구조화.
   - **대시보드 위젯 UI(FR-MON):** 실시간 농장 데이터 카드형 UI 및 알림 리스트 구현.
   - **스케줄러 인터페이스(FR-SCH):** 투두리스트와 애플 캘린더 스타일의 일정 등록/조회 화면 구현.

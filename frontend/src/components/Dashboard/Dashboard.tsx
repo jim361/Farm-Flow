@@ -1,22 +1,30 @@
-// src/components/Dashboard/Dashboard.tsx
-
-import React from 'react';
+import type { ReactNode } from 'react';
 
 interface DashboardCardProps {
   title: string;
-  children: React.ReactNode;
+  subtitle?: string;
+  children: ReactNode;
 }
 
-const DashboardCard = ({ title, children }: DashboardCardProps) => {
+const DashboardCard = ({ title, subtitle, children }: DashboardCardProps) => {
   return (
-    <div style={{
-      flex: 1,
-      border: '1px solid #000',
-      padding: '20px'
-    }}>
-      <h3 style={{ marginTop: 0 }}>{title}</h3>
+    <section
+      style={{
+        background: 'linear-gradient(170deg, #ffffff, #f2f8ec)',
+        border: '1px solid #d8e7ca',
+        borderRadius: '16px',
+        boxShadow: '0 12px 24px rgba(47, 81, 36, 0.08)',
+        padding: '18px',
+      }}
+    >
+      <header style={{ marginBottom: '14px' }}>
+        <h3 style={{ margin: 0, color: '#2f5124', fontSize: '18px', fontWeight: 700 }}>{title}</h3>
+        {subtitle ? (
+          <p style={{ margin: '4px 0 0', color: '#5f7058', fontSize: '13px' }}>{subtitle}</p>
+        ) : null}
+      </header>
       <div>{children}</div>
-    </div>
+    </section>
   );
 };
 
