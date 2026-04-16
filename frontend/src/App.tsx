@@ -129,8 +129,7 @@ function AppBody() {
       console.error("Device delete error:", err);
     }
   }, []);
-  
-    //수정
+
     
 return (
 
@@ -142,18 +141,10 @@ return (
 <Routes>
 
 {/* 레이아웃으로 감싸고 싶은 페이지들을 여기에 둡니다 */}
-
 <Route element={<Layout />}>
-
 <Route path="/" element={<Navigate to="/logic-builder" replace />} />
-
-
-{/* 수빈님의 추가 페이지들 */}
-
 <Route path="/login" element={<Login />}/>
-
 <Route path="/Sign" element={<Sign />}/>
-
 <Route path="/Schedular" element={<Schedular />}/>
 
 
@@ -161,31 +152,10 @@ return (
 
 <Route path="/dashboard" element={<Dashboard />} />
 
-<Route
+<Route path="/logic-builder" element={
 
-path="/logic-builder"
-
-element={
-
-<LogicBuilderPage
-
-key={builderSessionKey}
-
-ref={builderRef}
-
-libraryDevices={libraryDevices}
-
-pageTitle={builderTitle}
-
-initialSnapshot={builderSnapshot}
-
-onDeleteLibraryDevices={handleDeleteLibraryDevices}
-
-/>
-
-}
-
-/>
+<LogicBuilderPage key={builderSessionKey}
+ref={builderRef} libraryDevices={libraryDevices} pageTitle={builderTitle} initialSnapshot={builderSnapshot} onDeleteLibraryDevices={handleDeleteLibraryDevices}/> } />
 
 <Route
 
@@ -215,6 +185,7 @@ element={ <DeviceRegistrationPage onRegisterDevice={async () => { await fetchDev
 
 </div>
 );
+};
 
 export default function App() {
 
@@ -223,4 +194,4 @@ export default function App() {
       <AppBody />
     </BrowserRouter>
   );
-}
+};
