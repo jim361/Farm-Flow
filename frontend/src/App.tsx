@@ -16,14 +16,16 @@ import Calendar from "./page/Calendar";
 import { DeviceRegistrationPage } from "./page/DeviceRegistrationPage";
 import { LogicBuilderPage, type LogicBuilderHandle } from "./page/LogicBuilderPage";
 import { TemplatePage } from "./page/TemplatePage";
+import {
+  fetchDevicesApi,
+  fetchWorkflowsApi,
+  saveWorkflowApi,
+  deleteWorkflowApi,
+  deleteDevicesApi,
+} from "./api/api";
  
-// 1. 백엔드 엔티티 구조와 일치하는 타입 정의
-export type LibraryDevice = {
-  id: string;
-  name: string;
-  deviceType: "SENSOR" | "ACTUATOR";
-  subtype?: string;
-};
+// LibraryDevice 타입을 api/api.ts에서 re-export (기존 import 호환 유지)
+export type { LibraryDevice } from "./api/api";
  
 const DEFAULT_BUILDER_TITLE = "비주얼 로직 빌더";
  
@@ -33,7 +35,7 @@ function AppBody() {
   const { pathname } = location;
  
   const [safetyOpen, setSafetyOpen] = useState(false);
-  const [libraryDevices, setLibraryDevices] = useState<LibraryDevice[]>([]);
+  const [libraryDevices, setLibraryDevices] = useState<import("./api/api").LibraryDevice[]>([]);
   const [userWorkflows, setUserWorkflows] = useState<SavedUserWorkflow[]>([]);
   const [builderTitle, setBuilderTitle] = useState(DEFAULT_BUILDER_TITLE);
   const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null);
@@ -41,45 +43,21 @@ function AppBody() {
   const [builderSessionKey, setBuilderSessionKey] = useState(0);
   const builderRef = useRef<LogicBuilderHandle>(null);
  
-  /**
-   * [핵심] 백엔드 DB에서 장치 목록을 가져오는 함수
-   */
+  /** 장치 목록 로드 */
   const fetchDevices = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/v1/devices");
-      if (!response.ok) throw new Error("장치 데이터를 불러올 수 없습니다.");
- 
-      const data = await response.json();
-      console.log("Fetched Devices from DB:", data);
- 
-      const mapped: LibraryDevice[] = data.map((d: any) => ({
-        id: d.id.toString(),
-        name: d.name,
-        deviceType: d.deviceType || d.device_type,
-        subtype: d.sensorType || d.actuatorType || d.sensor_type,
-      }));
- 
-      setLibraryDevices(mapped);
+      const devices = await fetchDevicesApi();
+      setLibraryDevices(devices);
     } catch (err) {
       console.error("Fetch Error:", err);
     }
   }, []);
  
-  /**
-   * 백엔드에서 워크플로우 목록을 가져오는 함수
-   */
+  /** 워크플로우 목록 로드 */
   const fetchWorkflows = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/v1/workflows");
-      if (!res.ok) throw new Error("워크플로우 로드 실패");
-      const data = await res.json();
-      const mapped: SavedUserWorkflow[] = data.map((w: any) => ({
-        id: w.id.toString(),
-        name: w.name,
-        nodes: w.flowData ? JSON.parse(w.flowData).nodes || [] : [],
-        edges: w.flowData ? JSON.parse(w.flowData).edges || [] : [],
-      }));
-      setUserWorkflows(mapped);
+      const workflows = await fetchWorkflowsApi();
+      setUserWorkflows(workflows);
     } catch (err) {
       console.error("Workflow fetch error:", err);
     }
@@ -133,7 +111,7 @@ function AppBody() {
     applyLocationForLogicBuilder();
   }, [pathname, applyLocationForLogicBuilder]);
  
-  // 워크플로우 저장 → 백엔드 API 호출
+  // 워크플로우 저장
   const handleConfirmSave = useCallback(
     async (name: string) => {
       const g = builderRef.current?.getGraph();
@@ -141,12 +119,7 @@ function AppBody() {
       const flowData = JSON.stringify({ nodes: g.nodes, edges: g.edges });
  
       try {
-        const res = await fetch("http://localhost:8080/api/v1/workflows", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, flowData }),
-        });
-        if (!res.ok) throw new Error("저장 실패");
+        await saveWorkflowApi(name, flowData);
         await fetchWorkflows();
       } catch (err) {
         console.error("Save error:", err);
@@ -158,17 +131,13 @@ function AppBody() {
     [navigate, fetchWorkflows],
   );
  
-  // 워크플로우 삭제 → 백엔드 DELETE API 호출
+  // 워크플로우 삭제
   const handleDeleteWorkflow = useCallback(
     async (id: string) => {
       try {
-        const res = await fetch(`http://localhost:8080/api/v1/workflows/${id}`, {
-          method: "DELETE",
-        });
-        if (!res.ok) throw new Error("삭제 실패");
+        await deleteWorkflowApi(id);
         await fetchWorkflows();
  
-        // 현재 빌더에서 열린 워크플로우가 삭제된 경우 초기화
         if (activeWorkflowId === id) {
           setActiveWorkflowId(null);
           setBuilderSnapshot(null);
@@ -182,21 +151,11 @@ function AppBody() {
     [fetchWorkflows, activeWorkflowId],
   );
  
-  /**
-   * 라이브러리 장치 삭제 → 백엔드 DELETE API 호출 + 프론트 상태 반영
-   */
+  // 라이브러리 장치 삭제
   const handleDeleteLibraryDevices = useCallback(
     async (ids: string[]) => {
       try {
-        // 백엔드에 각 장치 DELETE 요청
-        await Promise.all(
-          ids.map((id) =>
-            fetch(`http://localhost:8080/api/v1/devices/${id}`, {
-              method: "DELETE",
-            })
-          )
-        );
-        // 프론트 상태에서 제거
+        await deleteDevicesApi(ids);
         setLibraryDevices((prev) => prev.filter((d) => !ids.includes(d.id)));
       } catch (err) {
         console.error("Device delete error:", err);
