@@ -12,6 +12,8 @@
   --ff-purple-soft: #ede9fe;
 }
 
+
+
 *,
 *::before,
 *::after {
@@ -1088,4 +1090,9 @@ button.tpl-card {
 
 button.tpl-card:hover {
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.ff-bar--selected {
+  outline: 2px solid #ef4444;
+  background-color: #fef2f2;
 }

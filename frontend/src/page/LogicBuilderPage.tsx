@@ -89,10 +89,11 @@ type LogicBuilderPageProps = {
   libraryDevices: LibraryDevice[]; // 백엔드에서 가져온 실제 장치 목록
   pageTitle: string;
   initialSnapshot: { nodes: Node[]; edges: Edge[] } | null;
+  onDeleteLibraryDevices?: (ids: string[]) => void; // 라이브러리 장치 삭제 콜백
 };
  
 export const LogicBuilderPage = forwardRef<LogicBuilderHandle, LogicBuilderPageProps>(
-  function LogicBuilderPage({ libraryDevices = [], pageTitle, initialSnapshot }, ref) {
+  function LogicBuilderPage({ libraryDevices = [], pageTitle, initialSnapshot, onDeleteLibraryDevices }, ref) {
     const wrapRef = useRef<HTMLDivElement>(null);
     const nextNodeIdRef = useRef(4);
  
@@ -102,6 +103,27 @@ export const LogicBuilderPage = forwardRef<LogicBuilderHandle, LogicBuilderPageP
     const [nodes, setNodes, onNodesChange] = useNodesState(snapshot.nodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(snapshot.edges);
     const [selectedCount, setSelectedCount] = useState(0);
+ 
+    // 라이브러리 아이템 선택 상태
+    const [selectedLibIds, setSelectedLibIds] = useState<Set<string>>(new Set());
+    const isDraggingRef = useRef(false);
+ 
+    const toggleLibSelect = (id: string) => {
+      // 드래그 직후의 mouseUp은 무시
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        return;
+      }
+      setSelectedLibIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+    };
  
     // ID 관리 업데이트
     useLayoutEffect(() => {
@@ -193,6 +215,7 @@ export const LogicBuilderPage = forwardRef<LogicBuilderHandle, LogicBuilderPageP
       deviceName?: string,
       headerLabel?: string,
     ) => {
+      isDraggingRef.current = true; // 드래그 중 플래그 ON
       event.dataTransfer.setData("application/reactflow", nodeType);
       if (deviceName) {
         event.dataTransfer.setData("application/reactflow-name", deviceName);
@@ -211,15 +234,48 @@ export const LogicBuilderPage = forwardRef<LogicBuilderHandle, LogicBuilderPageP
     );
  
     const deleteSelected = () => {
+      // 1) 캔버스에서 선택된 노드/엣지 삭제
       setNodes((nds) => nds.filter((n) => !n.selected));
       setEdges((eds) => eds.filter((e) => !e.selected));
+ 
+      // 2) 라이브러리에서 선택된 장치 삭제 + 해당 장치의 캔버스 노드도 함께 삭제
+      if (selectedLibIds.size > 0) {
+        // 선택된 장치들의 이름 목록 수집
+        const selectedDeviceNames = new Set(
+          libraryDevices
+            .filter((d) => selectedLibIds.has(d.id))
+            .map((d) => d.name)
+        );
+ 
+        // 캔버스에서 해당 이름의 노드 제거
+        setNodes((nds) => {
+          const remaining = nds.filter(
+            (n) => !(typeof n.data.name === "string" && selectedDeviceNames.has(n.data.name))
+          );
+          // 삭제된 노드 ID 목록
+          const removedIds = new Set(nds.filter((n) => !remaining.includes(n)).map((n) => n.id));
+          // 삭제된 노드에 연결된 엣지도 제거
+          if (removedIds.size > 0) {
+            setEdges((eds) =>
+              eds.filter((e) => !removedIds.has(e.source) && !removedIds.has(e.target))
+            );
+          }
+          return remaining;
+        });
+ 
+        // 부모(App)에게 라이브러리 장치 삭제 요청 (백엔드 DELETE 호출)
+        if (onDeleteLibraryDevices) {
+          onDeleteLibraryDevices(Array.from(selectedLibIds));
+        }
+        setSelectedLibIds(new Set());
+      }
     };
  
     useEffect(() => {
       const nodeCount = nodes.filter((n) => n.selected).length;
       const edgeCount = edges.filter((e) => e.selected).length;
-      setSelectedCount(nodeCount + edgeCount);
-    }, [nodes, edges]);
+      setSelectedCount(nodeCount + edgeCount + selectedLibIds.size);
+    }, [nodes, edges, selectedLibIds]);
  
     return (
       <div className="ff-full-container">
@@ -252,8 +308,9 @@ export const LogicBuilderPage = forwardRef<LogicBuilderHandle, LogicBuilderPageP
                   .map((item) => (
                     <div
                       key={item.id}
-                      className="ff-bar ff-bar--sensor"
+                      className={`ff-bar ff-bar--sensor${selectedLibIds.has(item.id) ? " ff-bar--selected" : ""}`}
                       draggable
+                      onMouseUp={() => toggleLibSelect(item.id)}
                       onDragStart={(e) => onPaletteDragStart(e, "sensor", item.name)}
                     >
                       <span className="ff-bar-glyph">S</span>
@@ -294,8 +351,9 @@ export const LogicBuilderPage = forwardRef<LogicBuilderHandle, LogicBuilderPageP
                   .map((item) => (
                     <div
                       key={item.id}
-                      className="ff-bar ff-bar--action"
+                      className={`ff-bar ff-bar--action${selectedLibIds.has(item.id) ? " ff-bar--selected" : ""}`}
                       draggable
+                      onMouseUp={() => toggleLibSelect(item.id)}
                       onDragStart={(e) => onPaletteDragStart(e, "action", item.name, "제어기")}
                     >
                       <span className="ff-bar-glyph">A</span>
