@@ -4,16 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate} from "react-router-dom";
 import type { Edge, Node } from "@xyflow/react";
 import type { SavedUserWorkflow } from "./workflowTypes";
-import { AppHeader } from "./components/AppHeader";
+// import { AppHeader } from "./components/AppHeader";
 import { DeploymentSafetyModal } from "./components/DeploymentSafetyModal";
 import Dashboard from "./page/Dashboard";
-
-import Schedular from './page/Schedular'; //추가
+import Schedular from './page/Scheduler';
 import Login from './page/Login';
 import Sign from './page/Sign';
-import Layout from './components/Layout';//
-
-  import { DeviceRegistrationPage } from "./page/DeviceRegistrationPage";
+import Layout from './components/Layout';
+import { DeviceRegistrationPage } from "./page/DeviceRegistrationPage";
 import { LogicBuilderPage, type LogicBuilderHandle } from "./page/LogicBuilderPage";
 import { TemplatePage } from "./page/TemplatePage";
 import { fetchDevicesApi, fetchWorkflowsApi, saveWorkflowApi, deleteWorkflowApi, deleteDevicesApi } from "./api/api";
@@ -135,7 +133,7 @@ return (
 
 <div className="ff-app">
 
-<AppHeader showSave={pathname === "/logic-builder"} onSave={() => setSafetyOpen(true)} />
+{/* <AppHeader showSave={pathname === "/logic-builder"} onSave={() => setSafetyOpen(true)} /> */}
 
 
 <Routes>
@@ -144,12 +142,8 @@ return (
 <Route element={<Layout />}>
 <Route path="/" element={<Navigate to="/logic-builder" replace />} />
 <Route path="/login" element={<Login />}/>
-<Route path="/Sign" element={<Sign />}/>
-<Route path="/Schedular" element={<Schedular />}/>
-
-
-{/* 팀원의 기존 페이지들 */}
-
+<Route path="/sign" element={<Sign />}/>
+<Route path = '/scheduler' element = {<Schedular />} />
 <Route path="/dashboard" element={<Dashboard />} />
 
 <Route path="/logic-builder" element={

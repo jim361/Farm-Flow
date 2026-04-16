@@ -23,8 +23,8 @@ export function AppHeader({ showSave, onSave, showAdminPill }: AppHeaderProps) {
   return (
     <header className="ff-header">
       <div className="ff-brand">
-        <span className="ff-logo">Smart Farm</span>
-        <nav className="ff-nav" aria-label="주 메뉴">
+        <span className="ff-logo">Farm Flow</span>
+        <nav className="ff-nav">
           {nav.map(({ to, label }) => (
             <NavLink
               key={to}

@@ -7,27 +7,7 @@ import AddScheduleModal from '../components/Scheduler/AddScheduleModal';
 import { useSchedulerState } from '../components/Scheduler/useSchedulerState';
 
 const Scheduler = () => {
-  const {
-    todayDate,
-    selectedDate,
-    visibleDate,
-    eventsByDate,
-    todayEvents,
-    completedEventIds,
-    selectedEvent,
-    addModalOpen,
-    editModalOpen,
-    openAddModal,
-    closeAddModal,
-    openEditModal,
-    closeEditModal,
-    selectDate,
-    changeMonth,
-    createEvent,
-    updateEvent,
-    deleteEvent,
-    toggleComplete,
-  } = useSchedulerState();
+  const { todayDate, selectedDate, visibleDate, eventsByDate, todayEvents, completedEventIds, selectedEvent, addModalOpen, editModalOpen, openAddModal, closeAddModal, openEditModal, closeEditModal, selectDate, changeMonth, createEvent, updateEvent, deleteEvent, toggleComplete } = useSchedulerState();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
