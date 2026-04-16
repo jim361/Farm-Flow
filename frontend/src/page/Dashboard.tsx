@@ -101,7 +101,7 @@ const Dashboard = () => {
           completedEventIds={completedEventIds}
           onToggleComplete={toggleComplete}
           onOpenEditModal={setSelectedEventId}
-          onCalendarClick={() => navigate('/Schedular')}
+          onCalendarClick={() => navigate('/Scheduler')}
         />
         <WorkflowSection />
       </div>

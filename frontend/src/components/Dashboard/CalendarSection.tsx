@@ -6,7 +6,7 @@ const CalendarSection = () => {
 
   // 한글 주석: 캘린더 영역과 오늘 할 일 영역 모두 동일한 스케줄러 페이지로 이동시킵니다.
   const moveToSchedular = () => {
-    navigate('/Schedular');
+    navigate('/scheduler')
   };
 
   // 한글 주석: 키보드 접근성(Enter/Space)으로도 동일 이동 이벤트가 실행되도록 처리합니다.
@@ -18,7 +18,7 @@ const CalendarSection = () => {
   };
 
   return (
-    <DashboardCard title="캘린더 (Calendar)" subtitle="클릭 시 스케줄러로 이동">
+    <DashboardCard title="캘린더 (Calendar)">
       <div
         role="button"
         tabIndex={0}

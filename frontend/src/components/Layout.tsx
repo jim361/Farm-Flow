@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import Topbar from './Topbar';
+import { AppHeader } from './AppHeader';
 import { getStoredScheduleEvents, SCHEDULE_UPDATED_EVENT } from './Scheduler/SchedulerData';
 import type { ScheduleEventItem } from './Scheduler/types';
 
@@ -76,7 +76,7 @@ export default function Layout(){
   
   return(
       <div style = {{flex:1, display: 'flex', flexDirection: 'column'}}>
-        <Topbar/>
+        <AppHeader/>
         
       <div style = {{display: 'flex', flex: 1}}>
       {isDashboard && <Sidebar alerts={alerts} />}
