@@ -1,9 +1,6 @@
 package org.example.farmflow.service;
 
-import org.example.farmflow.rules.Co2Rule;
-import org.example.farmflow.rules.TemperatureRule;
-import org.example.farmflow.rules.HumidityRule;
-import org.example.farmflow.rules.LuxRule;
+import org.example.farmflow.rules.*;
 import org.jeasy.rules.api.Facts;
 import org.jeasy.rules.api.Rules;
 import org.jeasy.rules.api.RulesEngine;
@@ -25,17 +22,20 @@ public class SensorService {
         rules.register(new LuxRule());
     }
 
+    public void processSensorData(double temp, double humi, double co2, double lux) {
+        Facts facts = new Facts();
+        facts.put("temp", temp);
+        facts.put("humi", humi);
+        facts.put("co2", co2);
+        facts.put("lux", lux);
+
+        System.out.println("🚀 [RuleEngine] 데이터 판별 시작...");
+        rulesEngine.fire(rules, facts);
+    }
+
     @ServiceActivator(inputChannel = "mqttInputChannel")
     public void handleMessage(Message<?> message) {
-        String payload = message.getPayload().toString();
-        System.out.println("📩 수신된 데이터: " + payload);
-
-        Facts facts = new Facts();
-        facts.put("temp", 35.5);
-        facts.put("humi", 85.0);
-        facts.put("co2", 350.0);
-        facts.put("lux", 150.0);
-
-        rulesEngine.fire(rules, facts);
+        // MQTT로 데이터가 들어와도 위 메서드를 실행!
+        processSensorData(35.5, 85.0, 350.0, 150.0);
     }
 }
