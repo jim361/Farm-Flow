@@ -31,9 +31,9 @@ const SchedulerTimeline = ({ todayDate, events, completedEventIds, onToggleCompl
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
   return (
-    <DashboardCard title="통합 타임라인 프레임" subtitle={`${todayDate} | 일정 등록 → 진행 확인 → 알림 연동`}>
+    <DashboardCard title={`24시간 타임라인 (${todayDate})`} subtitle={undefined}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', color: '#6b796f', fontSize: '11px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', color: '#5b6070', fontSize: '11px', fontWeight: 700 }}>
           <span>00:00</span>
           <span style={{ textAlign: 'center' }}>06:00</span>
           <span style={{ textAlign: 'center' }}>12:00</span>
@@ -41,115 +41,76 @@ const SchedulerTimeline = ({ todayDate, events, completedEventIds, onToggleCompl
           <span style={{ textAlign: 'right' }}>24:00</span>
         </div>
 
-        <div style={{ position: 'relative', height: '8px', borderRadius: '999px', backgroundColor: '#e7efe8' }}>
-          <div style={{ position: 'absolute', left: '25%', top: 0, bottom: 0, width: '1px', backgroundColor: '#c9d6cb' }} />
-          <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', backgroundColor: '#c9d6cb' }} />
-          <div style={{ position: 'absolute', left: '75%', top: 0, bottom: 0, width: '1px', backgroundColor: '#c9d6cb' }} />
+        <div style={{ position: 'relative', height: '8px', borderRadius: '999px', backgroundColor: '#e4e5f2' }}>
+          <div style={{ position: 'absolute', left: '25%', top: 0, bottom: 0, width: '1px', backgroundColor: '#c7cade' }} />
+          <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', backgroundColor: '#c7cade' }} />
+          <div style={{ position: 'absolute', left: '75%', top: 0, bottom: 0, width: '1px', backgroundColor: '#c7cade' }} />
         </div>
 
         {dailyEvents.length === 0 ? (
           <p style={{ margin: 0, color: '#7a857b', fontSize: '13px' }}>등록된 일정이 없습니다.</p>
         ) : (
-          dailyEvents.map((event) => {
-            const isDone = completedEventIds.includes(event.id);
-            return (
-            <div
-              key={event.id}
-              style={{
-                border: '1px solid #dbe7dc',
-                borderRadius: '10px',
-                backgroundColor: isDone ? '#f1f6f2' : '#f9fcf9',
-                padding: '10px',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => onToggleComplete(event.id)}
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '999px',
-                      border: '1px solid #c1d6c6',
-                      backgroundColor: isDone ? '#64a981' : '#ffffff',
-                      color: '#ffffff',
-                      fontSize: '11px',
-                      lineHeight: 1,
-                      cursor: 'pointer',
-                    }}
-                    aria-label="완료 토글"
-                  >
-                    {isDone ? '✓' : ''}
-                  </button>
-                  <strong style={{ color: '#283b2d', fontSize: '14px', textDecoration: isDone ? 'line-through' : 'none' }}>
-                    {event.title}
-                  </strong>
-                </div>
+          <div style={{ position: 'relative', height: '62px', borderRadius: '12px', backgroundColor: '#eceaf5', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', left: '25%', top: 0, bottom: 0, width: '1px', backgroundColor: '#d6d4e4' }} />
+            <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', backgroundColor: '#d6d4e4' }} />
+            <div style={{ position: 'absolute', left: '75%', top: 0, bottom: 0, width: '1px', backgroundColor: '#d6d4e4' }} />
 
+            {dailyEvents.map((event, index) => {
+              const isDone = completedEventIds.includes(event.id);
+              const laneTop = index % 2 === 0 ? 10 : 34;
+
+              return (
                 <button
+                  key={event.id}
                   type="button"
                   onClick={() => onEventClick(event.id)}
                   style={{
-                    border: '1px solid #d5ded6',
-                    borderRadius: '8px',
-                    backgroundColor: '#ffffff',
-                    color: '#56655a',
-                    fontSize: '12px',
-                    padding: '4px 8px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  수정/삭제
-                </button>
-              </div>
-
-              <div style={{ position: 'relative', height: '16px', borderRadius: '999px', backgroundColor: '#edf3ee' }}>
-                <div
-                  title={event.title}
-                  style={{
                     position: 'absolute',
-                    top: 0,
+                    top: `${laneTop}px`,
                     left: `${toPercent(parseMinute(event.startTime))}%`,
-                    width: `${Math.max(8, toPercent(parseMinute(event.endTime) - parseMinute(event.startTime)))}%`,
-                    height: '16px',
+                    width: `${Math.max(10, toPercent(parseMinute(event.endTime) - parseMinute(event.startTime)))}%`,
+                    height: '18px',
+                    border: 'none',
                     borderRadius: '999px',
-                    backgroundColor: isDone ? '#7cae8f' : '#3f8755',
+                    backgroundColor: isDone ? '#7cae8f' : '#2f6f46',
                     color: '#ffffff',
                     fontSize: '10px',
                     fontWeight: 700,
                     display: 'flex',
                     alignItems: 'center',
-                    paddingLeft: '8px',
+                    justifyContent: 'space-between',
+                    gap: '6px',
+                    padding: '0 6px 0 8px',
+                    cursor: 'pointer',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}
+                  title={`${event.title} (${event.startTime} - ${event.endTime})`}
                 >
-                  {event.title}
-                </div>
-              </div>
-
-              <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <p style={{ margin: 0, color: '#69756c', fontSize: '12px' }}>
-                  {event.startTime} - {event.endTime}
-                </p>
-                <span
-                  style={{
-                    backgroundColor: badgeColor(event.category),
-                    color: '#2f4634',
-                    borderRadius: '999px',
-                    padding: '4px 9px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                  }}
-                >
-                  {event.category}
-                </span>
-              </div>
-            </div>
-          );
-          })
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</span>
+                  <button
+                    type="button"
+                    aria-label="완료 토글"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleComplete(event.id);
+                    }}
+                    style={{
+                      border: 'none',
+                      padding: 0,
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '999px',
+                      backgroundColor: isDone ? '#d8f6e2' : badgeColor(event.category),
+                      flex: '0 0 auto',
+                      cursor: 'pointer',
+                    }}
+                  />
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
     </DashboardCard>

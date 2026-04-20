@@ -39,17 +39,17 @@ const CalendarTodoFrame = ({
         onClick={onCalendarClick}
         onKeyDown={handleCalendarKeyDown}
         style={{
-          border: '1px solid #d9e7cf',
-          backgroundColor: '#f9fcf6',
+          border: '1px solid #e6e8f0',
+          backgroundColor: '#f8f9fd',
           borderRadius: '12px',
           padding: '12px',
           marginBottom: '12px',
           cursor: onCalendarClick ? 'pointer' : 'default',
         }}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px' }}>
           {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
-            <strong key={day} style={{ color: '#5d6f56', textAlign: 'center', fontSize: '12px' }}>
+            <strong key={day} style={{ color: '#8a8fa2', textAlign: 'center', fontSize: '12px' }}>
               {day}
             </strong>
           ))}
@@ -62,15 +62,15 @@ const CalendarTodoFrame = ({
               <div
                 key={`day-${index}`}
                 style={{
-                  height: '30px',
+                  height: '28px',
                   borderRadius: '8px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '12px',
-                  color: isInMonth ? '#41563a' : '#9bad96',
-                  backgroundColor: isToday ? '#dff1d5' : '#ffffff',
-                  border: '1px solid #e2eed9',
+                  color: isInMonth ? '#3a4054' : '#a2a8bc',
+                  backgroundColor: isToday ? '#e8f7e9' : '#ffffff',
+                  border: '1px solid #e6e8f0',
                 }}
               >
                 {isInMonth ? dayNumber : ''}
@@ -81,10 +81,10 @@ const CalendarTodoFrame = ({
       </div>
 
       {/* 한글 주석: 하단 오늘의 할 일 영역 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
-        <h4 style={{ margin: 0, color: '#2f5124' }}>오늘의 할 일 (To-do) - {todayDate}</h4>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
+        <h4 style={{ margin: 0, color: '#1f2431', fontSize: '15px' }}>오늘의 할 일 (To-do) - {todayDate}</h4>
         {todayEvents.length === 0 ? (
-          <p style={{ margin: 0, color: '#768278', fontSize: '13px' }}>오늘 등록된 일정이 없습니다.</p>
+          <p style={{ margin: 0, color: '#8a90a2', fontSize: '13px' }}>오늘 등록된 일정이 없습니다.</p>
         ) : (
           todayEvents.map((event) => {
             const isDone = completedEventIds.includes(event.id);
@@ -95,10 +95,11 @@ const CalendarTodoFrame = ({
                 type="button"
                 onClick={() => onOpenEditModal(event.id)}
                 style={{
-                  border: '1px solid #dbe7dc',
+                  border: '1px solid #e7e9f1',
                   borderRadius: '10px',
-                  backgroundColor: '#f9fcf9',
-                  padding: '10px',
+                  backgroundColor: '#ffffff',
+                  padding: '11px 12px',
+                  minHeight: '44px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -106,24 +107,24 @@ const CalendarTodoFrame = ({
                   cursor: 'pointer',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
                   <input
                     type="checkbox"
                     checked={isDone}
                     onClick={(checkboxEvent) => checkboxEvent.stopPropagation()}
                     onChange={() => onToggleComplete(event.id)}
-                    style={{ width: '15px', height: '15px', accentColor: '#2f6f46' }}
+                    style={{ width: '14px', height: '14px', accentColor: '#2f6f46' }}
                   />
                   <div>
-                    <strong style={{ color: '#304235', fontSize: '13px', textDecoration: isDone ? 'line-through' : 'none' }}>
+                    <strong style={{ color: '#2b3142', fontSize: '13px', textDecoration: isDone ? 'line-through' : 'none' }}>
                       {event.title}
                     </strong>
-                    <p style={{ margin: '3px 0 0', color: '#5e6f63', fontSize: '12px' }}>
+                    <p style={{ margin: '2px 0 0', color: '#6e748a', fontSize: '12px' }}>
                       {event.startTime} - {event.endTime}
                     </p>
                   </div>
                 </div>
-                <span style={{ color: '#66756c', fontSize: '12px', fontWeight: 700 }}>수정</span>
+                <span style={{ color: '#667085', fontSize: '12px', fontWeight: 700 }}>수정</span>
               </button>
             );
           })

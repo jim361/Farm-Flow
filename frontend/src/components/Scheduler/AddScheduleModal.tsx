@@ -50,22 +50,22 @@ const AddScheduleModal = ({ open, defaultDate, onClose, onCreate }: AddScheduleM
   };
 
   return (
-    <div role="presentation" onClick={close} style={{ position: 'fixed', inset: 0, background: 'rgba(18,33,25,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()} style={{ width: '100%', maxWidth: '460px', backgroundColor: '#fff', border: '1px solid #cfe0d1', borderRadius: '14px', boxShadow: '0 18px 40px rgba(34,62,42,0.22)', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <h3 style={{ margin: 0, color: '#24402d' }}>새 일정 추가</h3>
-        <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="일정 이름" style={{ border: '1px solid #d4e2d6', borderRadius: '10px', padding: '10px' }} />
-        <input type="date" value={date} onChange={(event) => setDate(event.target.value)} style={{ border: '1px solid #d4e2d6', borderRadius: '10px', padding: '10px' }} />
+    <div role="presentation" onClick={close} style={{ position: 'fixed', inset: 0, background: 'rgba(20,24,34,0.38)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+      <div role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()} style={{ width: '100%', maxWidth: '500px', backgroundColor: '#f9f9fe', border: '1px solid #dde2ef', borderRadius: '20px', boxShadow: '0 26px 54px rgba(34,40,58,0.24)', padding: '22px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <h3 style={{ margin: 0, color: '#1e2430', fontSize: '24px', letterSpacing: '-0.01em' }}>새 일정 추가</h3>
+        <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="일정 이름" style={{ border: '1px solid #d7ddeb', borderRadius: '12px', padding: '12px', backgroundColor: '#ffffff' }} />
+        <input type="date" value={date} onChange={(event) => setDate(event.target.value)} style={{ border: '1px solid #d7ddeb', borderRadius: '12px', padding: '12px', backgroundColor: '#ffffff' }} />
         <div style={{ display: 'flex', gap: '8px' }}>
-          <input type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} style={{ flex: 1, border: '1px solid #d4e2d6', borderRadius: '10px', padding: '10px' }} />
-          <input type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} style={{ flex: 1, border: '1px solid #d4e2d6', borderRadius: '10px', padding: '10px' }} />
+          <input type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} style={{ flex: 1, border: '1px solid #d7ddeb', borderRadius: '12px', padding: '12px', backgroundColor: '#ffffff' }} />
+          <input type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} style={{ flex: 1, border: '1px solid #d7ddeb', borderRadius: '12px', padding: '12px', backgroundColor: '#ffffff' }} />
         </div>
-        <select value={category} onChange={(event) => setCategory(event.target.value as ScheduleEventItem['category'])} style={{ border: '1px solid #d4e2d6', borderRadius: '10px', padding: '10px' }}>
+        <select value={category} onChange={(event) => setCategory(event.target.value as ScheduleEventItem['category'])} style={{ border: '1px solid #d7ddeb', borderRadius: '12px', padding: '12px', backgroundColor: '#ffffff' }}>
           <option value="환기">환기</option><option value="관수">관수</option><option value="조명">조명</option><option value="점검">점검</option>
         </select>
-        <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="메모" rows={3} style={{ border: '1px solid #d4e2d6', borderRadius: '10px', padding: '10px', resize: 'none' }} />
+        <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="메모" rows={3} style={{ border: '1px solid #d7ddeb', borderRadius: '12px', padding: '12px', resize: 'none', backgroundColor: '#ffffff' }} />
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <button type="button" onClick={close} style={{ border: '1px solid #d4ddd5', borderRadius: '10px', padding: '8px 12px', background: '#fff', cursor: 'pointer' }}>취소</button>
-          <button type="button" onClick={submit} style={{ border: 'none', borderRadius: '10px', padding: '8px 12px', background: '#2f6b43', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>일정 저장</button>
+          <button type="button" onClick={close} style={{ border: '1px solid #d4dbea', borderRadius: '12px', padding: '10px 14px', background: '#fff', cursor: 'pointer', color: '#3a4257', fontWeight: 700 }}>취소</button>
+          <button type="button" onClick={submit} style={{ border: 'none', borderRadius: '12px', padding: '10px 16px', background: '#004d26', color: '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 10px 18px rgba(0, 77, 38, 0.2)' }}>일정 저장</button>
         </div>
       </div>
     </div>

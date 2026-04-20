@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate} from "react-router-dom";
 import type { Edge, Node } from "@xyflow/react";
 import type { SavedUserWorkflow } from "./workflowTypes";
-// import { AppHeader } from "./components/AppHeader";
+import { AppHeader } from "./components/AppHeader";
 import { DeploymentSafetyModal } from "./components/DeploymentSafetyModal";
 import Dashboard from "./page/Dashboard";
 import Schedular from './page/Scheduler';
@@ -102,7 +102,7 @@ function AppBody() {
     }
   }, [navigate, fetchWorkflows]);
 
-  /** 워크플로우 삭제 (handleDeleteWorkflow) */
+    //워크플로우 삭제 (handleDeleteWorkflow)
   const handleDeleteWorkflow = useCallback(async (id: string) => {
     try {
       await deleteWorkflowApi(id);
@@ -133,7 +133,7 @@ return (
 
 <div className="ff-app">
 
-{/* <AppHeader showSave={pathname === "/logic-builder"} onSave={() => setSafetyOpen(true)} /> */}
+{ <AppHeader showSave={pathname === "/logic-builder"} onSave={() => setSafetyOpen(true)} /> }
 
 
 <Routes>

@@ -26,42 +26,52 @@ const CalendarSection = ({
   const monthLabel = `${visibleDate.getFullYear()}년 ${visibleDate.getMonth() + 1}월`;
 
   return (
-    <DashboardCard title="캘린더 (Calendar)" subtitle="월 이동과 날짜 선택으로 스케줄을 확인합니다.">
+    <DashboardCard title="캘린더" subtitle={undefined}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <strong style={{ color: '#2b4633', fontSize: '17px' }}>{monthLabel}</strong>
-          <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <strong style={{ color: '#212530', fontSize: '36px', lineHeight: 1.06, letterSpacing: '-0.02em' }}>{monthLabel}</strong>
             <button
               type="button"
               onClick={onPrevMonth}
               style={{
-                border: '1px solid #cfe0d1',
-                backgroundColor: '#ffffff',
-                color: '#2d6140',
-                borderRadius: '10px',
-                padding: '7px 11px',
+                border: '1px solid #d8dae6',
+                backgroundColor: '#f5f5fb',
+                color: '#464e63',
+                borderRadius: '999px',
+                width: '28px',
+                height: '28px',
                 fontWeight: 700,
                 cursor: 'pointer',
+                padding: 0,
               }}
             >
-              이전 달
+              ‹
             </button>
             <button
               type="button"
               onClick={onNextMonth}
               style={{
-                border: '1px solid #cfe0d1',
-                backgroundColor: '#ffffff',
-                color: '#2d6140',
-                borderRadius: '10px',
-                padding: '7px 11px',
+                border: '1px solid #d8dae6',
+                backgroundColor: '#f5f5fb',
+                color: '#464e63',
+                borderRadius: '999px',
+                width: '28px',
+                height: '28px',
                 fontWeight: 700,
                 cursor: 'pointer',
+                padding: 0,
               }}
             >
-              다음 달
+              ›
             </button>
           </div>
+
+          {/* <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <span style={{ backgroundColor: '#004d26', color: '#ffffff', borderRadius: '999px', padding: '6px 14px', fontSize: '12px', fontWeight: 700 }}>월간</span>
+            <span style={{ color: '#3c4458', borderRadius: '999px', padding: '6px 12px', fontSize: '12px', fontWeight: 700 }}>주간</span>
+            <span style={{ color: '#3c4458', borderRadius: '999px', padding: '6px 12px', fontSize: '12px', fontWeight: 700 }}>일간</span>
+          </div> */}
         </div>
 
         <CalendarView
