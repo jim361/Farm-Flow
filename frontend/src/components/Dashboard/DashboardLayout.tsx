@@ -11,8 +11,8 @@ const DashboardLayout = ({ children }: LayoutProps) => {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '14px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+        gap: '12px',
         width: '100%',
         alignItems: 'stretch',
       }}

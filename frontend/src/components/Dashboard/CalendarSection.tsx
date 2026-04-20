@@ -25,16 +25,16 @@ const CalendarSection = () => {
         onClick={moveToSchedular}
         onKeyDown={handleKeyboardMove}
         style={{
-          border: '1px solid #d9e7cf',
-          backgroundColor: '#f9fcf6',
-          borderRadius: '12px',
-          padding: '12px',
+          border: '1px solid #e6e8f0',
+          backgroundColor: '#f8f9fd',
+          borderRadius: '14px',
+          padding: '14px',
           cursor: 'pointer',
         }}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '7px' }}>
           {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
-            <strong key={day} style={{ color: '#5d6f56', textAlign: 'center', fontSize: '12px' }}>
+            <strong key={day} style={{ color: '#8a8fa2', textAlign: 'center', fontSize: '13px' }}>
               {day}
             </strong>
           ))}
@@ -47,15 +47,15 @@ const CalendarSection = () => {
               <div
                 key={`day-${index}`}
                 style={{
-                  height: '30px',
-                  borderRadius: '8px',
+                  height: '32px',
+                  borderRadius: '9px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '12px',
-                  color: isInMonth ? '#41563a' : '#9bad96',
-                  backgroundColor: isToday ? '#dff1d5' : '#ffffff',
-                  border: '1px solid #e2eed9',
+                  fontSize: '13px',
+                  color: isInMonth ? '#3a4054' : '#a2a8bc',
+                  backgroundColor: isToday ? '#e8f7e9' : '#ffffff',
+                  border: '1px solid #e6e8f0',
                 }}
               >
                 {isInMonth ? dayNumber : ''}

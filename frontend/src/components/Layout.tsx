@@ -75,8 +75,8 @@ export default function Layout(){
   }, []);
   
   return(
-      <div style = {{flex:1, display: 'flex', flexDirection: 'column'}}>
-        <AppHeader/>
+      // <div style = {{flex:1, display: 'flex', flexDirection: 'column'}}>
+      //   <AppHeader/>
         
       <div style = {{display: 'flex', flex: 1}}>
       {isDashboard && <Sidebar alerts={alerts} />}
@@ -85,6 +85,6 @@ export default function Layout(){
           <Outlet />
         </main>
       </div>
-    </div>
+    // </div>
   );
 }
