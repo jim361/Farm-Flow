@@ -130,54 +130,51 @@ function AppBody() {
 
     
 return (
+  <div className="ff-app">
+    {/* 로그인, 회원가입 페이지가 아닐 때만 헤더를 표시합니다 */}
+    {pathname !== "/login" && pathname !== "/signup" && (
+      <AppHeader 
+        showSave={pathname === "/logic-builder"} 
+        onSave={() => setSafetyOpen(true)} 
+      />
+    )}
 
-<div className="ff-app">
+    <Routes>
+      {/* 1. 독립적인 인증 페이지 (Layout 적용 안 함) */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Sign />} />
 
-{ <AppHeader showSave={pathname === "/logic-builder"} onSave={() => setSafetyOpen(true)} /> }
+      {/* 2. 메인 서비스 페이지들 (Layout 적용) */}
+      <Route element={<Layout />}>
+        {/* 접속 시 가장 먼저 로그인 페이지로 이동하도록 설정 */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/scheduler" element={<Schedular />} />
+        <Route path="/logic-builder" element={
+          <LogicBuilderPage 
+            key={builderSessionKey}
+            ref={builderRef} 
+            libraryDevices={libraryDevices} 
+            pageTitle={builderTitle} 
+            initialSnapshot={builderSnapshot} 
+            onDeleteLibraryDevices={handleDeleteLibraryDevices}
+          />
+        } />
+        <Route path="/devices" element={
+          <DeviceRegistrationPage onRegisterDevice={async () => { await fetchDevices(); }} />
+        } />
+        <Route path="/templates" element={
+          <TemplatePage userWorkflows={userWorkflows} onDeleteWorkflow={handleDeleteWorkflow} />
+        } />
+      </Route>
 
+      {/* 정의되지 않은 모든 경로는 로그인으로 보냅니다 */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
 
-<Routes>
-
-{/* 레이아웃으로 감싸고 싶은 페이지들을 여기에 둡니다 */}
-<Route element={<Layout />}>
-<Route path="/" element={<Navigate to="/logic-builder" replace />} />
-<Route path="/login" element={<Login />}/>
-<Route path="/sign" element={<Sign />}/>
-<Route path = '/scheduler' element = {<Schedular />} />
-<Route path="/dashboard" element={<Dashboard />} />
-
-<Route path="/logic-builder" element={
-
-<LogicBuilderPage key={builderSessionKey}
-ref={builderRef} libraryDevices={libraryDevices} pageTitle={builderTitle} initialSnapshot={builderSnapshot} onDeleteLibraryDevices={handleDeleteLibraryDevices}/> } />
-
-<Route
-
-path="/devices"
-
-element={ <DeviceRegistrationPage onRegisterDevice={async () => { await fetchDevices();}}/> } />
-
-<Route path="/templates" element={
-
-<TemplatePage userWorkflows={userWorkflows} onDeleteWorkflow={handleDeleteWorkflow} />
-
-}
-
-/>
-
-</Route>
-
-
-{/* 어떤 경로에도 해당하지 않을 때 리다이렉트 */}
-
-<Route path="*" element={<Navigate to="/logic-builder" replace />} />
-
-</Routes>
-  
-
-<DeploymentSafetyModal open={safetyOpen} onClose={() => setSafetyOpen(false)} onConfirmDeploy={handleConfirmSave}/>
-
-</div>
+    <DeploymentSafetyModal open={safetyOpen} onClose={() => setSafetyOpen(false)} onConfirmDeploy={handleConfirmSave} />
+  </div>
 );
 };
 
