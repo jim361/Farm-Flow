@@ -1096,3 +1096,160 @@ button.tpl-card:hover {
   outline: 2px solid #ef4444;
   background-color: #fef2f2;
 }
+
+/* 장치 목록 (보유 장치 현황) */
+.dev-device-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+ 
+.dev-device-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+ 
+.dev-device-row:hover {
+  background: #f0fdf4;
+}
+ 
+.dev-device-row--selected {
+  border-color: var(--ff-green);
+  background: #f0fdf4;
+}
+ 
+.dev-device-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #dcfce7;
+  color: var(--ff-forest);
+  flex-shrink: 0;
+}
+ 
+.dev-device-info {
+  flex: 1;
+  min-width: 0;
+}
+ 
+.dev-device-kind {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--ff-muted);
+}
+ 
+.dev-device-name {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+ 
+/* 상태 점 — 오류/비활성 추가 */
+.dev-dot--off {
+  background: #cbd5e1;
+}
+ 
+.dev-dot--err {
+  background: #ef4444;
+}
+ 
+/* 위젯 서브타이틀 */
+.dev-widget-subtitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+ 
+.dev-widget-empty {
+  font-size: 0.82rem;
+  color: var(--ff-muted);
+  text-align: center;
+  padding: 16px 0;
+}
+ 
+/* 상태 변경 영역 */
+.dev-status-target {
+  font-size: 0.82rem;
+  color: var(--ff-muted);
+  margin: 4px 0 10px;
+}
+ 
+.dev-status-target--none {
+  color: #cbd5e1;
+}
+ 
+.dev-status-btns {
+  display: flex;
+  gap: 8px;
+}
+ 
+.dev-status-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 0;
+  border: 1.5px solid var(--ff-border);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ff-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+ 
+.dev-status-btn:hover:not(:disabled) {
+  background: #f8fafc;
+}
+ 
+.dev-status-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+ 
+.dev-status-btn--current.dev-status-btn--active {
+  border-color: var(--ff-green-bright);
+  background: #f0fdf4;
+  color: var(--ff-green);
+}
+ 
+.dev-status-btn--current.dev-status-btn--inactive {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+  color: #475569;
+}
+ 
+.dev-status-btn--current.dev-status-btn--error {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #dc2626;
+}
+ 
+/* 로직 설명 텍스트 */
+.dev-logic-desc {
+  font-size: 0.82rem;
+  color: var(--ff-muted);
+  margin: 4px 0 12px;
+  line-height: 1.5;
+}

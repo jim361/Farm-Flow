@@ -9,6 +9,8 @@ export default function Login() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
 
+  
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -40,6 +42,8 @@ export default function Login() {
       setError("서버에 연결할 수 없습니다.");
     }
   };
+
+  
 
   return (
     <div className="auth-page">
@@ -98,6 +102,11 @@ export default function Login() {
             로그인 →
           </button>
         </form>
+
+        // Login.tsx 등에 임시로 추가
+<button onClick={() => navigate("/dashboard")} style={{marginTop: '10px', color: '#888'}}>
+  (개발용) 로그인 건너뛰기
+</button>
 
         <div className="auth-links">
           <span>아이디 찾기</span>
