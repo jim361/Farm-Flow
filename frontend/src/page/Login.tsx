@@ -109,9 +109,9 @@ export default function Login() {
 </button>
 
         <div className="auth-links">
-          <span>아이디 찾기</span>
-          <span className="auth-links-dot">·</span>
-          <span>비밀번호 찾기</span>
+         <span className="auth-link-highlight" onClick={() => navigate("/find-id")}>아이디 찾기</span>
+<span className="auth-links-dot">·</span>
+<span className="auth-link-highlight" onClick={() => navigate("/find-pw")}>비밀번호 찾기</span>
           <span className="auth-links-dot">·</span>
           <span className="auth-link-highlight" onClick={() => navigate("/signup")}>
             회원가입

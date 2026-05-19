@@ -15,6 +15,8 @@ import { DeviceRegistrationPage } from "./page/DeviceRegistrationPage";
 import { LogicBuilderPage, type LogicBuilderHandle } from "./page/LogicBuilderPage";
 import { TemplatePage } from "./page/TemplatePage";
 import { fetchDevicesApi, fetchWorkflowsApi, saveWorkflowApi, deleteWorkflowApi, deleteDevicesApi } from "./api/api";
+import FindId from './page/FindId';
+import FindPw from './page/FindPw';
 
 // LibraryDevice 타입을 api/api.ts에서 re-export (기존 import 호환 유지)
 export type { LibraryDevice } from "./api/api";
@@ -141,8 +143,8 @@ return (
 
     <Routes>
       {/* 1. 독립적인 인증 페이지 (Layout 적용 안 함) */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Sign />} />
+      <Route path="/login" element={<Login />} /> <Route path="/find-id" element={<FindId />} />
+      <Route path="/signup" element={<Sign />} /> <Route path="/find-pw" element={<FindPw />} />
 
       {/* 2. 메인 서비스 페이지들 (Layout 적용) */}
       <Route element={<Layout />}>
