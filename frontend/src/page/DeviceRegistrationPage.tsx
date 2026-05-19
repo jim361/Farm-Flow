@@ -142,17 +142,18 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
       alert("상태를 변경할 장치를 먼저 선택하세요.");
       return;
     }
+    // 프론트 상태 먼저 반영
+    setDevices((prev) =>
+      prev.map((d) => (d.uid === selectedDeviceUid ? { ...d, status: newStatus } : d))
+    );
+    // 백엔드 동기화 (API 없으면 무시)
     try {
       await axios.patch(
         `http://localhost:8080/api/v1/devices/${selectedDeviceUid}/status`,
         { status: newStatus }
       );
-      setDevices((prev) =>
-        prev.map((d) => (d.uid === selectedDeviceUid ? { ...d, status: newStatus } : d))
-      );
     } catch (err) {
-      console.error("상태 변경 실패:", err);
-      alert("상태 변경에 실패했습니다.");
+      console.error("백엔드 상태 동기화 실패 (API 미구현):", err);
     }
   };
  

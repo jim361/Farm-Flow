@@ -103,7 +103,7 @@ export default function Login() {
           </button>
         </form>
 
-        // Login.tsx 등에 임시로 추가
+        {/* Login.tsx 등에 임시로 추가*/}
 <button onClick={() => navigate("/dashboard")} style={{marginTop: '10px', color: '#888'}}>
   (개발용) 로그인 건너뛰기
 </button>
