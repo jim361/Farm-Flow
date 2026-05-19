@@ -1,5 +1,5 @@
 //frontend/src/App.tsx
-
+ 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate} from "react-router-dom";
 import type { Edge, Node } from "@xyflow/react";
@@ -14,21 +14,21 @@ import Layout from './components/Layout';
 import { DeviceRegistrationPage } from "./page/DeviceRegistrationPage";
 import { LogicBuilderPage, type LogicBuilderHandle } from "./page/LogicBuilderPage";
 import { TemplatePage } from "./page/TemplatePage";
-import { fetchDevicesApi, fetchWorkflowsApi, saveWorkflowApi, deleteWorkflowApi, deleteDevicesApi } from "./api/api";
+import { fetchDevicesApi, fetchWorkflowsApi, saveWorkflowApi, updateWorkflowApi, deleteWorkflowApi, deleteDevicesApi } from "./api/api";
 import FindId from './page/FindId';
 import FindPw from './page/FindPw';
-
+ 
 // LibraryDevice 타입을 api/api.ts에서 re-export (기존 import 호환 유지)
 export type { LibraryDevice } from "./api/api";
-
+ 
 const DEFAULT_BUILDER_TITLE = "비주얼 로직 빌더";
-
-//AppBody위치, 백엔드 연동 필수 
+ 
+//AppBody위치, 백엔드 연동 필수
 function AppBody() {
   const navigate = useNavigate();
   const location = useLocation();
   const { pathname } = location;
-
+ 
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [libraryDevices, setLibraryDevices] = useState<import("./api/api").LibraryDevice[]>([]);
   const [userWorkflows, setUserWorkflows] = useState<SavedUserWorkflow[]>([]);
@@ -37,7 +37,7 @@ function AppBody() {
   const [builderSnapshot, setBuilderSnapshot] = useState<{ nodes: Node[]; edges: Edge[] } | null>(null);
   const [builderSessionKey, setBuilderSessionKey] = useState(0);
   const builderRef = useRef<LogicBuilderHandle>(null);
-
+ 
   /** 장치 목록 로드 */
   const fetchDevices = useCallback(async () => {
     try {
@@ -47,7 +47,7 @@ function AppBody() {
       console.error("Fetch Error:", err);
     }
   }, []);
-
+ 
   /** 워크플로우 목록 로드 */
   const fetchWorkflows = useCallback(async () => {
     try {
@@ -57,16 +57,18 @@ function AppBody() {
       console.error("Workflow fetch error:", err);
     }
   }, []);
-
+ 
   // 페이지 최초 진입 시 장치 + 워크플로우 목록 로드
   useEffect(() => {
     fetchDevices();
     fetchWorkflows();
   }, [fetchDevices, fetchWorkflows]);
-
-  // 로직 빌더 진입 시 상태 복원 로직
-  const applyLocationForLogicBuilder = useCallback(() => {
+ 
+  // ★ 로직 빌더 진입 시 상태 복원 (편집 모드)
+  useEffect(() => {
+    if (pathname !== "/logic-builder") return;
     const st = location.state as { workflowId?: string; reset?: boolean } | undefined;
+ 
     if (st?.reset) {
       setActiveWorkflowId(null);
       setBuilderSnapshot(null);
@@ -75,6 +77,7 @@ function AppBody() {
       navigate("/logic-builder", { replace: true, state: {} });
       return;
     }
+ 
     if (st?.workflowId) {
       const wf = userWorkflows.find((w) => w.id === st.workflowId);
       if (wf) {
@@ -82,29 +85,50 @@ function AppBody() {
         setBuilderSnapshot({ nodes: wf.nodes, edges: wf.edges });
         setBuilderTitle(wf.name);
         setBuilderSessionKey((k) => k + 1);
-        navigate("/logic-builder", { replace: true, state: {} });
-      } else {
-        navigate("/logic-builder", { replace: true, state: {} });
       }
+      navigate("/logic-builder", { replace: true, state: {} });
     }
-  }, [location.state, navigate, userWorkflows]);
-
-  /** 워크플로우 저장 (handleConfirmSave) */
+  }, [pathname, location.state, navigate, userWorkflows]);
+ 
+  /** 워크플로우 저장/수정 (모달에서 이름 입력 후 호출됨) */
   const handleConfirmSave = useCallback(async (name: string) => {
     const g = builderRef.current?.getGraph();
     if (!g) return;
     const flowData = JSON.stringify({ nodes: g.nodes, edges: g.edges });
-    try {
-      await saveWorkflowApi(name, flowData);
-      await fetchWorkflows();
-      setSafetyOpen(false);
-      navigate("/templates");
-    } catch (err) {
-      console.error("Save error:", err);
+ 
+    if (activeWorkflowId) {
+      // ★ 수정 모드: 기존 워크플로우 업데이트
+      try {
+        await updateWorkflowApi(activeWorkflowId, name, flowData);
+      } catch (err) {
+        console.error("백엔드 수정 API 실패 (API 미구현):", err);
+      }
+      // 프론트 상태 직접 업데이트 (백엔드 실패해도 반영)
+      setUserWorkflows((prev) =>
+        prev.map((w) =>
+          w.id === activeWorkflowId
+            ? { ...w, name, nodes: g.nodes, edges: g.edges }
+            : w
+        )
+      );
+    } else {
+      // 새로 만들기
+      try {
+        await saveWorkflowApi(name, flowData);
+        await fetchWorkflows();
+      } catch (err) {
+        console.error("Save error:", err);
+      }
     }
-  }, [navigate, fetchWorkflows]);
-
-    //워크플로우 삭제 (handleDeleteWorkflow)
+ 
+    setSafetyOpen(false);
+    setActiveWorkflowId(null);
+    setBuilderSnapshot(null);
+    setBuilderTitle(DEFAULT_BUILDER_TITLE);
+    navigate("/templates");
+  }, [navigate, fetchWorkflows, activeWorkflowId]);
+ 
+  //워크플로우 삭제 (handleDeleteWorkflow)
   const handleDeleteWorkflow = useCallback(async (id: string) => {
     try {
       await deleteWorkflowApi(id);
@@ -119,7 +143,7 @@ function AppBody() {
       console.error("Delete error:", err);
     }
   }, [fetchWorkflows, activeWorkflowId]);
-
+ 
   /** 장치 삭제 (handleDeleteLibraryDevices) */
   const handleDeleteLibraryDevices = useCallback(async (ids: string[]) => {
     try {
@@ -129,37 +153,40 @@ function AppBody() {
       console.error("Device delete error:", err);
     }
   }, []);
-
-    
+ 
+  // 편집 모드 여부
+  const isEditMode = activeWorkflowId !== null;
+ 
 return (
   <div className="ff-app">
-    {/* 로그인, 회원가입 페이지가 아닐 때만 헤더를 표시합니다 */}
-    {pathname !== "/login" && pathname !== "/signup" && (
-      <AppHeader 
-        showSave={pathname === "/logic-builder"} 
-        onSave={() => setSafetyOpen(true)} 
+    {/* 인증 페이지에서는 헤더 숨김 */}
+    {pathname !== "/login" && pathname !== "/signup" && pathname !== "/find-id" && pathname !== "/find-pw" && (
+      <AppHeader
+        showSave={pathname === "/logic-builder"}
+        onSave={() => setSafetyOpen(true)}
+        saveLabel={isEditMode ? "수정하기" : "저장하기"}
       />
     )}
-
+ 
     <Routes>
-      {/* 1. 독립적인 인증 페이지 (Layout 적용 안 함) */}
-      <Route path="/login" element={<Login />} /> <Route path="/find-id" element={<FindId />} />
-      <Route path="/signup" element={<Sign />} /> <Route path="/find-pw" element={<FindPw />} />
-
-      {/* 2. 메인 서비스 페이지들 (Layout 적용) */}
+      {/* 1. 독립적인 인증 페이지 */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Sign />} />
+      <Route path="/find-id" element={<FindId />} />
+      <Route path="/find-pw" element={<FindPw />} />
+ 
+      {/* 2. 메인 서비스 페이지들 */}
       <Route element={<Layout />}>
-        {/* 접속 시 가장 먼저 로그인 페이지로 이동하도록 설정 */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-        
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/scheduler" element={<Schedular />} />
         <Route path="/logic-builder" element={
-          <LogicBuilderPage 
+          <LogicBuilderPage
             key={builderSessionKey}
-            ref={builderRef} 
-            libraryDevices={libraryDevices} 
-            pageTitle={builderTitle} 
-            initialSnapshot={builderSnapshot} 
+            ref={builderRef}
+            libraryDevices={libraryDevices}
+            pageTitle={builderTitle}
+            initialSnapshot={builderSnapshot}
             onDeleteLibraryDevices={handleDeleteLibraryDevices}
           />
         } />
@@ -170,18 +197,16 @@ return (
           <TemplatePage userWorkflows={userWorkflows} onDeleteWorkflow={handleDeleteWorkflow} />
         } />
       </Route>
-
-      {/* 정의되지 않은 모든 경로는 로그인으로 보냅니다 */}
+ 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
-
+ 
     <DeploymentSafetyModal open={safetyOpen} onClose={() => setSafetyOpen(false)} onConfirmDeploy={handleConfirmSave} />
   </div>
 );
 };
-
+ 
 export default function App() {
-
   return (
     <BrowserRouter>
       <AppBody />

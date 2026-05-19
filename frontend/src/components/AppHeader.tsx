@@ -12,10 +12,11 @@ const nav = [
 type AppHeaderProps = {
   showSave?: boolean;
   onSave?: () => void;
+  saveLabel?: string;
   showAdminPill?: boolean;
 };
 
-export function AppHeader({ showSave, onSave, showAdminPill }: AppHeaderProps) {
+export function AppHeader({ showSave, onSave, saveLabel, showAdminPill }: AppHeaderProps) {
   const { pathname } = useLocation();
   const isTemplate = pathname === "/templates";
   const isLogicBuilder = pathname === "/logic-builder";
@@ -55,7 +56,7 @@ export function AppHeader({ showSave, onSave, showAdminPill }: AppHeaderProps) {
         </div>
         {showSave && isLogicBuilder ? (
           <button type="button" className="ff-btn-save ff-btn-save--stack" onClick={onSave}>
-            저장하기
+            {saveLabel || "저장하기"}
           </button>
         ) : null}
       </div>

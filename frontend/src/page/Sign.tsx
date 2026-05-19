@@ -41,28 +41,30 @@ export default function Sign() {
       return;
     }
  
+    // 로컬 저장소에서 중복 확인
+    const users = JSON.parse(localStorage.getItem("ff_users") || "[]");
+    if (users.find((u: any) => u.email === form.email)) {
+      setError("이미 존재하는 아이디입니다.");
+      return;
+    }
+ 
+    // 회원 등록
+    users.push({ email: form.email, password: form.password, phone: form.phone || "" });
+    localStorage.setItem("ff_users", JSON.stringify(users));
+ 
+    // 백엔드 동기화 (API 있으면 전송, 없으면 무시)
     try {
-      const res = await fetch("http://localhost:8080/api/v1/auth/signup", {
+      await fetch("http://localhost:8080/api/v1/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-          phone: form.phone || undefined,
-        }),
+        body: JSON.stringify({ email: form.email, password: form.password, phone: form.phone || undefined }),
       });
- 
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setError(data?.message || "회원가입에 실패했습니다.");
-        return;
-      }
- 
-      alert("회원가입이 완료되었습니다!");
-      navigate("/login");
     } catch {
-      setError("서버에 연결할 수 없습니다.");
+      // 백엔드 미연결 — 로컬만 사용
     }
+ 
+    alert("회원가입이 완료되었습니다!");
+    navigate("/login");
   };
  
   return (

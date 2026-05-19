@@ -18,24 +18,31 @@ export default function FindId() {
       return;
     }
  
+    // 로컬 저장소에서 검색
+    const users = JSON.parse(localStorage.getItem("ff_users") || "[]");
+    const found = users.find((u: any) => u.phone === phone);
+ 
+    if (found) {
+      setResult(found.email);
+      return;
+    }
+ 
+    // 백엔드도 시도
     try {
       const res = await fetch("http://localhost:8080/api/v1/auth/find-id", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
       });
- 
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setError(data?.message || "일치하는 계정을 찾을 수 없습니다.");
+      if (res.ok) {
+        const data = await res.json();
+        setResult(data.email);
         return;
       }
- 
-      const data = await res.json();
-      setResult(data.email);
     } catch {
-      setError("서버에 연결할 수 없습니다.");
+      // 백엔드 미연결
     }
+    setError("일치하는 계정을 찾을 수 없습니다.");
   };
  
   return (

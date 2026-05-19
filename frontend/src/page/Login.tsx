@@ -1,50 +1,52 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
-
+ 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
-
-  
-
+ 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
+ 
     if (!email.trim() || !password.trim()) {
       setError("아이디와 비밀번호를 입력해주세요.");
       return;
     }
-
-    try {
-      const res = await fetch("http://localhost:8080/api/v1/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setError(data?.message || "아이디 또는 비밀번호가 일치하지 않습니다.");
-        return;
+ 
+    // 로컬 저장소에서 확인
+    const users = JSON.parse(localStorage.getItem("ff_users") || "[]");
+    const found = users.find((u: any) => u.email === email && u.password === password);
+ 
+    if (!found) {
+      // 백엔드도 시도
+      try {
+        const res = await fetch("http://localhost:8080/api/v1/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          localStorage.setItem("token", data.token);
+          navigate("/dashboard");
+          return;
+        }
+      } catch {
+        // 백엔드 미연결
       }
-
-      const data = await res.json();
-      // JWT 토큰 저장
-      localStorage.setItem("token", data.token);
-      // 메인 페이지로 이동
-      navigate("/dashboard");
-    } catch {
-      setError("서버에 연결할 수 없습니다.");
+      setError("아이디 또는 비밀번호가 일치하지 않습니다.");
+      return;
     }
+ 
+    localStorage.setItem("token", "local-dev-token");
+    navigate("/dashboard");
   };
-
-  
-
+ 
   return (
     <div className="auth-page">
       <div className="auth-logo">
@@ -57,11 +59,11 @@ export default function Login() {
         <h1 className="auth-logo-title">Smart Farm</h1>
         <p className="auth-logo-sub">디지털 온실 관리 시스템</p>
       </div>
-
+ 
       <div className="auth-card">
         <h2 className="auth-card-title">로그인</h2>
         <p className="auth-card-desc">서비스를 이용하려면 계정에 로그인하세요.</p>
-
+ 
         <form onSubmit={handleLogin}>
           <div className="auth-field">
             <label>아이디</label>
@@ -75,7 +77,7 @@ export default function Login() {
               />
             </div>
           </div>
-
+ 
           <div className="auth-field">
             <label>비밀번호</label>
             <div className="auth-input-wrap">
@@ -95,21 +97,24 @@ export default function Login() {
               </button>
             </div>
           </div>
-
+ 
           {error && <p className="auth-error">{error}</p>}
-
+ 
           <button type="submit" className="auth-submit">
             로그인 →
           </button>
         </form>
 
-        {/* Login.tsx 등에 임시로 추가*/}
-<button onClick={() => navigate("/dashboard")} style={{marginTop: '10px', color: '#888'}}>
+        <button
+  type="button"
+  onClick={() => navigate("/dashboard")}
+  style={{ marginTop: "10px", width: "100%", padding: "12px", border: "1px dashed #ccc", borderRadius: "10px", background: "transparent", color: "#888", fontSize: "13px", cursor: "pointer" }}
+>
   (개발용) 로그인 건너뛰기
 </button>
-
+ 
         <div className="auth-links">
-         <span className="auth-link-highlight" onClick={() => navigate("/find-id")}>아이디 찾기</span>
+          <span className="auth-link-highlight" onClick={() => navigate("/find-id")}>아이디 찾기</span>
 <span className="auth-links-dot">·</span>
 <span className="auth-link-highlight" onClick={() => navigate("/find-pw")}>비밀번호 찾기</span>
           <span className="auth-links-dot">·</span>

@@ -53,7 +53,7 @@ export async function fetchWorkflowsApi(): Promise<SavedUserWorkflow[]> {
   }));
 }
  
-/** 워크플로우 저장 */
+/** 워크플로우 저장 (새로 만들기) */
 export async function saveWorkflowApi(name: string, flowData: string): Promise<void> {
   const res = await fetch(`${BASE_URL}/workflows`, {
     method: "POST",
@@ -61,6 +61,16 @@ export async function saveWorkflowApi(name: string, flowData: string): Promise<v
     body: JSON.stringify({ name, flowData }),
   });
   if (!res.ok) throw new Error("저장 실패");
+}
+ 
+/** 워크플로우 수정 (기존 것 업데이트) */
+export async function updateWorkflowApi(id: string, name: string, flowData: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/workflows/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, flowData }),
+  });
+  if (!res.ok) throw new Error("수정 실패");
 }
  
 /** 워크플로우 삭제 */
