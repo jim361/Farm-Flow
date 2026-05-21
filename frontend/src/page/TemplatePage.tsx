@@ -10,9 +10,9 @@ const edgeStyle = {
 };
  
 const ventilationNodes = [
-  { id: "n1", type: "action", position: { x: 60, y: 140 }, data: { name: "기본 환풍기", label: "기본 환풍기", headerLabel: "제어기" } },
+  { id: "n1", type: "sensor", position: { x: 60, y: 140 }, data: { name: "기본 센서", label: "기본 센서" } },
   { id: "n2", type: "condition", position: { x: 360, y: 120 }, data: { label: "조건 설정" } },
-  { id: "n3", type: "action", position: { x: 660, y: 140 }, data: { name: "기본 액션", label: "기본 액션" } },
+  { id: "n3", type: "action", position: { x: 660, y: 140 }, data: { name: "기본 제어기", label: "기본 제어기", headerLabel: "제어기" } },
 ];
  
 const ventilationEdges = [
