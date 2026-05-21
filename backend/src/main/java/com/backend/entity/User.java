@@ -8,12 +8,12 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "workflows")
+@Table(name = "users")
 @Getter @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Workflow {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,29 +22,18 @@ public class Workflow {
     @Column(unique = true, nullable = false, length = 20)
     private String uid;
 
-    // user_id FK — 소유자 검증에 사용
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(unique = true, nullable = false)
+    private String email;
 
-    @Column(name = "greenhouse_id")
-    private Long greenhouseId;
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
 
+    @Column(nullable = false, length = 100)
     private String name;
 
-    private String description;
-
-    @Column(name = "flow_data", columnDefinition = "jsonb")
-    private String flowData;
-
-    @Column(name = "rule_data", columnDefinition = "jsonb")
-    private String ruleData;
-
-    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private WorkflowStatus status;
-
-    private Integer version;
+    @Builder.Default
+    private String role = "USER";
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
