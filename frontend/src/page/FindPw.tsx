@@ -1,33 +1,25 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Search } from "lucide-react";
- 
+
 export default function FindPw() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState("");
- 
+  const [loading, setLoading] = useState(false);
+
   const handleFind = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setResult(null);
- 
+
     if (!email.trim()) {
-      setError("아이디를 입력해주세요.");
+      setError("이메일을 입력해주세요.");
       return;
     }
- 
-    // 로컬 저장소에서 검색
-    const users = JSON.parse(localStorage.getItem("ff_users") || "[]");
-    const found = users.find((u: any) => u.email === email);
- 
-    if (found) {
-      setResult(found.password);
-      return;
-    }
- 
-    // 백엔드도 시도
+
+    setLoading(true);
     try {
       const res = await fetch("http://localhost:8080/api/v1/auth/find-pw", {
         method: "POST",
@@ -37,14 +29,17 @@ export default function FindPw() {
       if (res.ok) {
         const data = await res.json();
         setResult(data.password);
-        return;
+      } else {
+        const err = await res.json().catch(() => null);
+        setError(err?.error || "일치하는 계정을 찾을 수 없습니다.");
       }
     } catch {
-      // 백엔드 미연결
+      setError("서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setLoading(false);
     }
-    setError("일치하는 계정을 찾을 수 없습니다.");
   };
- 
+
   return (
     <div className="auth-page">
       <div className="auth-logo">
@@ -57,48 +52,47 @@ export default function FindPw() {
         <h1 className="auth-logo-title">Smart Farm</h1>
         <p className="auth-logo-sub">디지털 온실 관리 시스템</p>
       </div>
- 
+
       <div className="auth-card">
         <h2 className="auth-card-title">비밀번호 찾기</h2>
-        <p className="auth-card-desc">회원가입 시 등록한 아이디로 비밀번호를 찾을 수 있습니다.</p>
- 
+        <p className="auth-card-desc">이메일을 입력하면 임시 비밀번호가 발급됩니다. 로그인 후 반드시 변경해주세요.</p>
+
         <form onSubmit={handleFind}>
           <div className="auth-field">
-            <label>아이디</label>
+            <label>이메일</label>
             <div className="auth-input-wrap">
               <User size={16} className="auth-input-icon" />
               <input
                 type="text"
-                placeholder="아이디를 입력해주세요"
+                placeholder="가입한 이메일을 입력해주세요"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
           </div>
- 
+
           {error && <p className="auth-error">{error}</p>}
- 
+
           {result && (
             <div className="auth-result">
-              <p className="auth-result-label">찾은 비밀번호</p>
+              <p className="auth-result-label">임시 비밀번호가 발급되었습니다</p>
               <p className="auth-result-value">{result}</p>
+              <p style={{ fontSize: "0.8rem", color: "#64748b", marginTop: 6 }}>
+                이 비밀번호로 로그인 후 프로필에서 비밀번호를 변경해주세요.
+              </p>
             </div>
           )}
- 
-          <button type="submit" className="auth-submit">
+
+          <button type="submit" className="auth-submit" disabled={loading}>
             <Search size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
-            비밀번호 찾기
+            {loading ? "처리 중..." : "임시 비밀번호 발급"}
           </button>
         </form>
- 
+
         <div className="auth-links">
-          <span className="auth-link-highlight" onClick={() => navigate("/login")}>
-            로그인으로 돌아가기
-          </span>
+          <span className="auth-link-highlight" onClick={() => navigate("/login")}>로그인으로 돌아가기</span>
           <span className="auth-links-dot">·</span>
-          <span className="auth-link-highlight" onClick={() => navigate("/find-id")}>
-            아이디 찾기
-          </span>
+          <span className="auth-link-highlight" onClick={() => navigate("/find-id")}>아이디 찾기</span>
         </div>
       </div>
     </div>

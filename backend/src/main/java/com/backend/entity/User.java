@@ -3,19 +3,17 @@ package com.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "workflows")
+@Table(name = "users")
 @Getter @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Workflow {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,32 +22,18 @@ public class Workflow {
     @Column(unique = true, nullable = false, length = 20)
     private String uid;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(unique = true, nullable = false)
+    private String email;
 
-    @Column(name = "greenhouse_id")
-    private Long greenhouseId;
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
 
+    @Column(nullable = false, length = 100)
     private String name;
 
-    private String description;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "flow_data", columnDefinition = "jsonb")
-    private String flowData;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "rule_data", columnDefinition = "jsonb")
-    private String ruleData;
-
-    @Enumerated(EnumType.STRING)
     @Column(length = 20)
     @Builder.Default
-    private WorkflowStatus status = WorkflowStatus.DRAFT;
-
-    @Builder.Default
-    private Integer version = 1;
+    private String role = "USER";
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
