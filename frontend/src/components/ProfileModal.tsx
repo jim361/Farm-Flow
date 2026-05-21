@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // 1. 페이지 이동을 위한 useNavigate 추가
 import { Lock, Phone, User, LogOut, X, CheckCircle2 } from "lucide-react";
 
 type ProfileModalProps = {
@@ -8,6 +9,7 @@ type ProfileModalProps = {
 };
 
 export function ProfileModal({ isOpen, onClose, isAdmin }: ProfileModalProps) {
+  const navigate = useNavigate(); // 2. 네비게이트 함수 선언
   const userId = "farmflow_user";
 
   // 비밀번호 및 입력 상태 관리
@@ -20,11 +22,24 @@ export function ProfileModal({ isOpen, onClose, isAdmin }: ProfileModalProps) {
 
   if (!isOpen) return null;
 
+  // --- 로그아웃 처리 함수 ---
   const handleLogout = () => {
     const confirmLogout = window.confirm("로그아웃 하시겠습니까?");
-    if (confirmLogout) {
-      console.log("로그아웃 로직 실행");
+    if (!confirmLogout) return;
+
+    try {
+      // 3. 브라우저 저장소에 기록된 인증 정보 일괄 삭제
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      sessionStorage.clear(); // 세션 스토리지도 함께 사용 중이라면 통째로 초기화
+
+      // 4. 알림 후 모달을 닫고 로그인(/login) 페이지로 강제 이동
+      alert("로그아웃 되었습니다.");
       onClose();
+      navigate("/login");
+    } catch (error) {
+      console.error("로그아웃 처리 중 에러 발생:", error);
+      alert("로그아웃 도중 오류가 발생했습니다.");
     }
   };
 
