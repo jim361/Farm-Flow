@@ -105,13 +105,13 @@ export default function Login() {
           </button>
         </form>
 
-        <button
+        {/* <button
   type="button"
   onClick={() => navigate("/dashboard")}
   style={{ marginTop: "10px", width: "100%", padding: "12px", border: "1px dashed #ccc", borderRadius: "10px", background: "transparent", color: "#888", fontSize: "13px", cursor: "pointer" }}
 >
   (개발용) 로그인 건너뛰기
-</button>
+</button> */}
  
         <div className="auth-links">
           <span className="auth-link-highlight" onClick={() => navigate("/find-id")}>아이디 찾기</span>
