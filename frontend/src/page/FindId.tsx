@@ -1,38 +1,36 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Phone, Search } from "lucide-react";
- 
+import { Mail, Search } from "lucide-react";
+
 export default function FindId() {
   const navigate = useNavigate();
-  const [phone, setPhone] = useState("");
+  const [userEmail, setUserEmail] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState("");
- 
+
   const handleFind = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setResult(null);
- 
-    if (!phone.trim()) {
-      setError("전화번호를 입력해주세요.");
+
+    if (!userEmail.trim()) {
+      setError("이메일을 입력해주세요.");
       return;
     }
- 
-    // 로컬 저장소에서 검색
+
     const users = JSON.parse(localStorage.getItem("ff_users") || "[]");
-    const found = users.find((u: any) => u.phone === phone);
- 
+    const found = users.find((u: any) => u.userEmail === userEmail);
+
     if (found) {
       setResult(found.email);
       return;
     }
- 
-    // 백엔드도 시도
+
     try {
       const res = await fetch("http://localhost:8080/api/v1/auth/find-id", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ email: userEmail }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -44,7 +42,7 @@ export default function FindId() {
     }
     setError("일치하는 계정을 찾을 수 없습니다.");
   };
- 
+
   return (
     <div className="auth-page">
       <div className="auth-logo">
@@ -57,40 +55,40 @@ export default function FindId() {
         <h1 className="auth-logo-title">Smart Farm</h1>
         <p className="auth-logo-sub">디지털 온실 관리 시스템</p>
       </div>
- 
+
       <div className="auth-card">
         <h2 className="auth-card-title">아이디 찾기</h2>
-        <p className="auth-card-desc">회원가입 시 등록한 전화번호로 아이디를 찾을 수 있습니다.</p>
- 
+        <p className="auth-card-desc">회원가입 시 등록한 이메일로 아이디를 찾을 수 있습니다.</p>
+
         <form onSubmit={handleFind}>
           <div className="auth-field">
-            <label>전화번호</label>
+            <label>이메일</label>
             <div className="auth-input-wrap">
-              <Phone size={16} className="auth-input-icon" />
+              <Mail size={16} className="auth-input-icon" />
               <input
-                type="tel"
-                placeholder="010-0000-0000"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                type="email"
+                placeholder="example@email.com"
+                value={userEmail}
+                onChange={(e) => setUserEmail(e.target.value)}
               />
             </div>
           </div>
- 
+
           {error && <p className="auth-error">{error}</p>}
- 
+
           {result && (
             <div className="auth-result">
               <p className="auth-result-label">찾은 아이디</p>
               <p className="auth-result-value">{result}</p>
             </div>
           )}
- 
+
           <button type="submit" className="auth-submit">
             <Search size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
             아이디 찾기
           </button>
         </form>
- 
+
         <div className="auth-links">
           <span className="auth-link-highlight" onClick={() => navigate("/login")}>
             로그인으로 돌아가기
