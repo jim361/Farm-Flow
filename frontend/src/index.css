@@ -1253,3 +1253,44 @@ button.tpl-card:hover {
   margin: 4px 0 12px;
   line-height: 1.5;
 }
+
+/* 작물별 필터 바 */
+.tpl-filter-bar {
+  display: flex;
+  gap: 8px;
+  padding: 0 32px;
+  margin-bottom: 16px;
+}
+.tpl-filter-btn {
+  padding: 6px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  background: #fff;
+  color: #6b7280;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tpl-filter-btn:hover {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+.tpl-filter-btn--active {
+  background: #22c55e;
+  color: #fff;
+  border-color: #22c55e;
+}
+
+/* 템플릿 메타 정보 (작성자, 다운로드 수) */
+.tpl-meta {
+  display: flex;
+  gap: 12px;
+  margin: 8px 0 12px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+.tpl-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

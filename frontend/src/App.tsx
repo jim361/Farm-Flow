@@ -14,8 +14,7 @@ import Layout from './components/Layout';
 import { DeviceRegistrationPage } from "./page/DeviceRegistrationPage";
 import { LogicBuilderPage, type LogicBuilderHandle } from "./page/LogicBuilderPage";
 import { TemplatePage } from "./page/TemplatePage";
-import { fetchDevicesApi, fetchWorkflowsApi, saveWorkflowApi, updateWorkflowApi, deleteWorkflowApi, deleteDevicesApi, applyTemplateApi } from "./api/api";
-import { ventilationNodes, ventilationEdges } from "./page/TemplatePage";
+import { fetchDevicesApi, fetchWorkflowsApi, saveWorkflowApi, updateWorkflowApi, deleteWorkflowApi, deleteDevicesApi } from "./api/api";
 import FindId from './page/FindId';
 import FindPw from './page/FindPw';
  
@@ -170,41 +169,6 @@ function AppBody() {
     }
   }, [fetchWorkflows, activeWorkflowId]);
  
-  /** 빌트인 템플릿 적용 (지능형 환기 제어 → 새 워크플로우 생성) */
-  const handleApplyBuiltinTemplate = useCallback(async () => {
-    const name = "지능형 환기 제어";
-    const flowData = JSON.stringify({ nodes: ventilationNodes, edges: ventilationEdges });
- 
-    // 백엔드 시도 (POST /templates/{id}/apply)
-    try {
-      await applyTemplateApi("builtin-v");
-      await fetchWorkflows();
-      alert("템플릿이 적용되었습니다! 새 워크플로우가 생성되었습니다.");
-      return;
-    } catch {
-      // 백엔드 미연결 → saveWorkflow로 직접 생성
-    }
- 
-    // 백엔드 실패 시 워크플로우 직접 생성
-    let saved = false;
-    try {
-      await saveWorkflowApi(name, flowData);
-      await fetchWorkflows();
-      saved = true;
-    } catch {
-      // 백엔드 완전 미연결
-    }
- 
-    if (!saved) {
-      const localId = `local-${Date.now()}`;
-      setUserWorkflows((prev) => [
-        ...prev,
-        { id: localId, name, nodes: ventilationNodes as Node[], edges: ventilationEdges as Edge[] },
-      ]);
-    }
-    alert("템플릿이 적용되었습니다! 새 워크플로우가 생성되었습니다.");
-  }, [fetchWorkflows]);
- 
   /** 사용자 워크플로우 적용 (기존 워크플로우 → 활성화/배포) */
   const handleApplyUserWorkflow = useCallback(async (id: string) => {
     // 백엔드에 배포 요청 시도
@@ -275,8 +239,8 @@ return (
           <TemplatePage
             userWorkflows={userWorkflows}
             onDeleteWorkflow={handleDeleteWorkflow}
-            onApplyBuiltinTemplate={handleApplyBuiltinTemplate}
             onApplyUserWorkflow={handleApplyUserWorkflow}
+            onRefreshWorkflows={fetchWorkflows}
           />
         } />
       </Route>

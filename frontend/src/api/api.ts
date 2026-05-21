@@ -8,6 +8,18 @@ export type LibraryDevice = {
   subtype?: string;
 };
  
+export type TemplateItem = {
+  id: string;
+  name: string;
+  description: string;
+  cropType: string;
+  flowData: string;
+  ruleData: string;
+  scheduleData: string;
+  author: string;
+  downloadCnt: number;
+};
+ 
 const BASE_URL = "http://localhost:8080/api/v1";
  
 // ─── 장치(Device) API ───
@@ -83,7 +95,28 @@ export async function deleteWorkflowApi(id: string): Promise<void> {
  
 // ─── 템플릿(Template) API ───
  
-/** 템플릿 적용 — FR-TPL-002: 템플릿 flowData를 복사해 새 워크플로우 생성 */
+/** 템플릿 목록 조회 (작물별 필터 지원) — FR-TPL-001 */
+export async function fetchTemplatesApi(cropType?: string): Promise<TemplateItem[]> {
+  const url = cropType
+    ? `${BASE_URL}/templates?crop_type=${cropType}`
+    : `${BASE_URL}/templates`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("템플릿 로드 실패");
+  const data = await res.json();
+  return data.map((t: any) => ({
+    id: t.id.toString(),
+    name: t.name || "",
+    description: t.description || "",
+    cropType: t.cropType || t.crop_type || "",
+    flowData: t.flowData || t.flow_data || "{}",
+    ruleData: t.ruleData || t.rule_data || "{}",
+    scheduleData: t.scheduleData || t.schedule_data || "{}",
+    author: t.author || "",
+    downloadCnt: t.downloadCnt ?? t.download_cnt ?? 0,
+  }));
+}
+ 
+/** 템플릿 적용 — FR-TPL-002: 워크플로우 + 스케줄 세트 복사 생성 */
 export async function applyTemplateApi(templateId: string): Promise<void> {
   const res = await fetch(`${BASE_URL}/templates/${templateId}/apply`, {
     method: "POST",
