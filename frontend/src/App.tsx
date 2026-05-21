@@ -128,11 +128,21 @@ function AppBody() {
       );
     } else {
       // 새로 만들기
+      let saved = false;
       try {
         await saveWorkflowApi(name, flowData);
         await fetchWorkflows();
+        saved = true;
       } catch (err) {
         console.error("Save error:", err);
+      }
+      // 백엔드 실패 시 로컬 state에 직접 추가
+      if (!saved) {
+        const localId = `local-${Date.now()}`;
+        setUserWorkflows((prev) => [
+          ...prev,
+          { id: localId, name, nodes: g.nodes, edges: g.edges },
+        ]);
       }
     }
  
