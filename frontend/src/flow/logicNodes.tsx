@@ -39,7 +39,7 @@ export function ConditionNode(_props: NodeProps) {
       <div className="ff-node__head">조건 IF</div>
       <div className="ff-node__body">
         <div className="ff-node__logic">
-          &gt; 28°C
+          &gt; 21°C
           <br />
           AND &gt; 50%
         </div>
