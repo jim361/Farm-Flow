@@ -29,3 +29,8 @@ dist-ssr
 .env.development
 *.env
 *.env.*
+
+frontend/src/page/FindId.tsx
+frontend/src/page/FindPw.tsx
+frontend/src/page/Login.tsx
+frontend/src/page/Sign.tsx
