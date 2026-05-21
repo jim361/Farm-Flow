@@ -1,3 +1,7 @@
+/* ==========================================
+   1. 모달 레이어 및 컨테이너
+   ========================================== */
+
 /* 모달 전체 레이어 (화면 중앙 고정) */
 .ff-modal-overlay {
   position: fixed;
@@ -24,12 +28,16 @@
   animation: ff-modal-slide-up 0.25s ease-out;
 }
 
+/* ==========================================
+   2. 모달 헤더 및 상단 유저 프로필 구역
+   ========================================== */
+
 /* 모달 헤더 구역 */
 .ff-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   padding-bottom: 10px;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -50,6 +58,52 @@
   align-items: center;
   padding: 4px;
 }
+
+/* [추가] 상단 이름 프로필 레이아웃 구역 */
+.ff-modal-user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #f8fafc;
+  padding: 14px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #f1f5f9;
+}
+
+/* [추가] 프로필 동그라미 아바타 박스 */
+.ff-avatar-placeholder {
+  width: 42px;
+  height: 42px;
+  background-color: #e2e8f0;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #64748b;
+}
+
+/* [추가] 유저 텍스트 정렬 */
+.ff-user-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ff-user-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.ff-user-role {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* ==========================================
+   3. 폼 입력 및 피드백 구조
+   ========================================== */
 
 /* 모달 입력 폼 레이아웃 */
 .ff-modal-form {
@@ -87,7 +141,7 @@
 }
 
 .ff-form-group input:focus:not(.ff-input-disabled) {
-  border-color: #4a90e2;
+  border-color: #15803d; /* Farm Flow 테마와 어울리는 초록색 포인트로 포커스 컬러 수정 */
 }
 
 /* 비밀번호 잠금 등 비활성화 상태 스타일 */
@@ -122,7 +176,16 @@
   font-weight: 500;
   cursor: pointer;
   margin-top: 8px;
+  transition: background-color 0.2s;
 }
+
+.ff-submit-btn:hover {
+  background-color: #166534; /* 마우스 호버 시 살짝 어두워지는 피드백 추가 */
+}
+
+/* ==========================================
+   4. 모달 푸터 (로그아웃 등)
+   ========================================== */
 
 /* 모달 푸터 (로그아웃 버튼 구역) */
 .ff-modal-footer {
@@ -145,13 +208,17 @@
   cursor: pointer;
   padding: 6px 10px;
   border-radius: 4px;
+  transition: background-color 0.2s;
 }
 
 .ff-logout-btn:hover {
   background-color: #fff5f5;
 }
 
-/* 부드러운 모달 등장 애니메이션 정의 */
+/* ==========================================
+   5. 애니메이션 정의
+   ========================================== */
+
 @keyframes ff-modal-slide-up {
   from {
     opacity: 0;
