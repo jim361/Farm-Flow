@@ -1,48 +1,47 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // 1. 페이지 이동을 위한 useNavigate 추가
+import { useNavigate } from "react-router-dom";
 import { Lock, Phone, User, LogOut, X, CheckCircle2 } from "lucide-react";
 
 type ProfileModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  isAdmin: boolean;
 };
 
-export function ProfileModal({ isOpen, onClose, isAdmin }: ProfileModalProps) {
-  const navigate = useNavigate(); // 2. 네비게이트 함수 선언
+export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
+  const navigate = useNavigate();
   const userId = "farmflow_user";
 
-  // 비밀번호 및 입력 상태 관리
+  // --- 비밀번호 변경 관련 상태 변수 ---
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // 실시간 비밀번호 검증 (테스트 비밀번호: 1234)
+  // 현재 비밀번호가 맞는지 실시간 판단 (임시 비밀번호: 1234)
   const isPasswordVerified = currentPassword === "1234";
 
   if (!isOpen) return null;
 
-  // --- 로그아웃 처리 함수 ---
+  // 로그아웃 처리 및 라우터 강제 이동 함수
   const handleLogout = () => {
     const confirmLogout = window.confirm("로그아웃 하시겠습니까?");
     if (!confirmLogout) return;
 
     try {
-      // 3. 브라우저 저장소에 기록된 인증 정보 일괄 삭제
+      // 브라우저 내부 로그인 저장소 비우기
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      sessionStorage.clear(); // 세션 스토리지도 함께 사용 중이라면 통째로 초기화
+      sessionStorage.clear();
 
-      // 4. 알림 후 모달을 닫고 로그인(/login) 페이지로 강제 이동
       alert("로그아웃 되었습니다.");
-      onClose();
-      navigate("/login");
+      onClose(); // 모달 닫기
+      navigate("/login"); // 로그인 페이지로 리다이렉트
     } catch (error) {
       console.error("로그아웃 처리 중 에러 발생:", error);
       alert("로그아웃 도중 오류가 발생했습니다.");
     }
   };
 
+  // 회원 정보 수정 완료 제출 함수
   const handleSubmitProfile = (e: React.FormEvent) => {
     e.preventDefault();
     if (isPasswordVerified && newPassword !== confirmPassword) {
@@ -57,9 +56,9 @@ export function ProfileModal({ isOpen, onClose, isAdmin }: ProfileModalProps) {
     <div className="ff-modal-overlay" onClick={onClose}>
       <div className="ff-modal-content" onClick={(e) => e.stopPropagation()}>
         
-        {/* 모달 헤더 */}
+        {/* 모달 헤더 (어디서나 항상 회원 정보 수정으로 통일) */}
         <div className="ff-modal-header">
-          <h3>{isAdmin ? "관리자 프로필 설정" : "회원 정보 수정"}</h3>
+          <h3>회원 정보 수정</h3>
           <button type="button" className="ff-modal-close-icon-btn" onClick={onClose}>
             <X size={20} />
           </button>
@@ -67,11 +66,14 @@ export function ProfileModal({ isOpen, onClose, isAdmin }: ProfileModalProps) {
 
         {/* 모달 본문 (폼 영역) */}
         <form className="ff-modal-form" onSubmit={handleSubmitProfile}>
+          
+          {/* 1. 아이디 칸 */}
           <div className="ff-form-group">
             <label><User size={14} /> 아이디</label>
             <input type="text" value={userId} disabled className="ff-input-disabled" />
           </div>
 
+          {/* 2. 현재 비밀번호 입력 칸 */}
           <div className="ff-form-group">
             <label><Lock size={14} /> 현재 비밀번호 확인</label>
             <input 
@@ -87,6 +89,7 @@ export function ProfileModal({ isOpen, onClose, isAdmin }: ProfileModalProps) {
             )}
           </div>
 
+          {/* 3. 새 비밀번호 변경 칸 (처음엔 항상 잠겨 있다가 맞추면 입력 가능) */}
           <div className="ff-form-group">
             <label style={{ color: isPasswordVerified ? "#555555" : "#aaaaaa" }}>
               <Lock size={14} /> 새 비밀번호 변경
@@ -112,6 +115,7 @@ export function ProfileModal({ isOpen, onClose, isAdmin }: ProfileModalProps) {
             />
           </div>
 
+          {/* 4. 전화번호 변경 칸 */}
           <div className="ff-form-group">
             <label><Phone size={14} /> 전화번호 변경</label>
             <input type="tel" placeholder="010-0000-0000" />
