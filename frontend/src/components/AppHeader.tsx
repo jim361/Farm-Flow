@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { UserRound } from "lucide-react";
 import { ProfileModal } from "./ProfileModal";
-import "./AppHeader.css"; // 분리해 낸 스타일시트 임포트 연동
+import "./AppHeader.css"; // 분리해 둔 CSS 스타일시트 링크 연동
 
 const nav = [
   { to: "/dashboard", label: "대시보드" },
@@ -19,13 +19,12 @@ type AppHeaderProps = {
   showAdminPill?: boolean;
 };
 
-export function AppHeader({ showSave, onSave, saveLabel, showAdminPill }: AppHeaderProps) {
+export function AppHeader({ showSave, onSave, saveLabel }: AppHeaderProps) {
   const { pathname } = useLocation();
-  const isTemplate = pathname === "/templates";
   const isLogicBuilder = pathname === "/logic-builder";
 
+  // 모달 토글을 위한 단독 State 배치
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const isAdmin = isTemplate || showAdminPill;
 
   return (
     <>
@@ -47,13 +46,14 @@ export function AppHeader({ showSave, onSave, saveLabel, showAdminPill }: AppHea
 
         <div className={"ff-header-actions" + (isLogicBuilder ? " ff-header-actions--stack" : "")}>
           <div className="ff-header-icons-row">
+            {/* 💡 수정 포인트: 불필요한 주소 체크 분기문을 없애고 ff-icon-btn 스타일로 통합 고정 */}
             <button
               type="button"
-              className={isAdmin ? "ff-user-pill" : "ff-icon-btn"}
-              aria-label={isAdmin ? "관리자 프로필" : "프로필"}
+              className="ff-icon-btn"
+              aria-label="프로필 수정 메뉴"
               onClick={() => setIsProfileModalOpen(true)}
             >
-              <UserRound size={isAdmin ? 18 : 20} strokeWidth={2} />
+              <UserRound size={20} strokeWidth={2} />
             </button>
           </div>
 
@@ -65,10 +65,10 @@ export function AppHeader({ showSave, onSave, saveLabel, showAdminPill }: AppHea
         </div>
       </header>
 
+      {/* 깔끔하게 쪼개진 프로필 모달 배치 */}
       <ProfileModal 
         isOpen={isProfileModalOpen} 
         onClose={() => setIsProfileModalOpen(false)} 
-        isAdmin={isAdmin} 
       />
     </>
   );
