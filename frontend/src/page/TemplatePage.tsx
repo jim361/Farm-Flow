@@ -20,12 +20,21 @@ const ventilationEdges = [
   { id: "e2", source: "n2", target: "n3", animated: true, style: edgeStyle },
 ];
  
+export { ventilationNodes, ventilationEdges };
+ 
 type TemplatePageProps = {
   userWorkflows: SavedUserWorkflow[];
   onDeleteWorkflow: (id: string) => void;
+  onApplyBuiltinTemplate: () => void;
+  onApplyUserWorkflow: (id: string) => void;
 };
  
-export function TemplatePage({ userWorkflows, onDeleteWorkflow }: TemplatePageProps) {
+export function TemplatePage({
+  userWorkflows,
+  onDeleteWorkflow,
+  onApplyBuiltinTemplate,
+  onApplyUserWorkflow,
+}: TemplatePageProps) {
   const navigate = useNavigate();
  
   return (
@@ -78,7 +87,11 @@ export function TemplatePage({ userWorkflows, onDeleteWorkflow }: TemplatePagePr
               >
                 편집
               </button>
-              <button type="button" className="tpl-btn-primary">
+              <button
+                type="button"
+                className="tpl-btn-primary"
+                onClick={onApplyBuiltinTemplate}
+              >
                 적용
               </button>
             </div>
@@ -101,7 +114,11 @@ export function TemplatePage({ userWorkflows, onDeleteWorkflow }: TemplatePagePr
                 >
                   편집
                 </button>
-                <button type="button" className="tpl-btn-primary">
+                <button
+                  type="button"
+                  className="tpl-btn-primary"
+                  onClick={() => onApplyUserWorkflow(w.id)}
+                >
                   적용
                 </button>
                 <button

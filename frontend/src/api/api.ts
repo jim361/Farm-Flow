@@ -80,3 +80,13 @@ export async function deleteWorkflowApi(id: string): Promise<void> {
   });
   if (!res.ok) throw new Error("삭제 실패");
 }
+ 
+// ─── 템플릿(Template) API ───
+ 
+/** 템플릿 적용 — FR-TPL-002: 템플릿 flowData를 복사해 새 워크플로우 생성 */
+export async function applyTemplateApi(templateId: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/templates/${templateId}/apply`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("템플릿 적용 실패");
+}
