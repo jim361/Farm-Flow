@@ -67,12 +67,27 @@ function AppBody() {
   // ★ 로직 빌더 진입 시 상태 복원 (편집 모드)
   useEffect(() => {
     if (pathname !== "/logic-builder") return;
-    const st = location.state as { workflowId?: string; reset?: boolean } | undefined;
+    const st = location.state as {
+      workflowId?: string;
+      reset?: boolean;
+      builtinSnapshot?: { nodes: Node[]; edges: Edge[] };
+      builtinTitle?: string;
+    } | undefined;
  
     if (st?.reset) {
       setActiveWorkflowId(null);
       setBuilderSnapshot(null);
       setBuilderTitle(DEFAULT_BUILDER_TITLE);
+      setBuilderSessionKey((k) => k + 1);
+      navigate("/logic-builder", { replace: true, state: {} });
+      return;
+    }
+ 
+    // 빌트인 템플릿 프리셋 로드
+    if (st?.builtinSnapshot) {
+      setActiveWorkflowId(null);
+      setBuilderSnapshot(st.builtinSnapshot);
+      setBuilderTitle(st.builtinTitle || DEFAULT_BUILDER_TITLE);
       setBuilderSessionKey((k) => k + 1);
       navigate("/logic-builder", { replace: true, state: {} });
       return;
