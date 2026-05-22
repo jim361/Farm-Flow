@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { UserRound } from "lucide-react";
 import { ProfileModal } from "./ProfileModal";
-import "./AppHeader.css"; 
+import "./AppHeader.css"; // 분리해 둔 CSS 스타일시트 링크 연동
 
 const nav = [
   { to: "/dashboard", label: "대시보드" },
@@ -22,6 +22,8 @@ type AppHeaderProps = {
 export function AppHeader({ showSave, onSave, saveLabel }: AppHeaderProps) {
   const { pathname } = useLocation();
   const isLogicBuilder = pathname === "/logic-builder";
+
+  // 모달 토글을 위한 단독 State 배치
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   return (
@@ -44,6 +46,7 @@ export function AppHeader({ showSave, onSave, saveLabel }: AppHeaderProps) {
 
         <div className={"ff-header-actions" + (isLogicBuilder ? " ff-header-actions--stack" : "")}>
           <div className="ff-header-icons-row">
+            {/* 💡 수정 포인트: 불필요한 주소 체크 분기문을 없애고 ff-icon-btn 스타일로 통합 고정 */}
             <button
               type="button"
               className="ff-icon-btn"
