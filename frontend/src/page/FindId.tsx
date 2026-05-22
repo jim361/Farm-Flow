@@ -7,6 +7,7 @@ export default function FindId() {
   const [userEmail, setUserEmail] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleFind = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,14 +19,7 @@ export default function FindId() {
       return;
     }
 
-    const users = JSON.parse(localStorage.getItem("ff_users") || "[]");
-    const found = users.find((u: any) => u.userEmail === userEmail);
-
-    if (found) {
-      setResult(found.email);
-      return;
-    }
-
+    setLoading(true);
     try {
       const res = await fetch("http://localhost:8080/api/v1/auth/find-id", {
         method: "POST",
@@ -35,12 +29,15 @@ export default function FindId() {
       if (res.ok) {
         const data = await res.json();
         setResult(data.email);
-        return;
+      } else {
+        const err = await res.json().catch(() => null);
+        setError(err?.error || "일치하는 계정을 찾을 수 없습니다.");
       }
     } catch {
-      // 백엔드 미연결
+      setError("서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setLoading(false);
     }
-    setError("일치하는 계정을 찾을 수 없습니다.");
   };
 
   return (
@@ -83,20 +80,16 @@ export default function FindId() {
             </div>
           )}
 
-          <button type="submit" className="auth-submit">
+          <button type="submit" className="auth-submit" disabled={loading}>
             <Search size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
-            아이디 찾기
+            {loading ? "검색 중..." : "아이디 찾기"}
           </button>
         </form>
 
         <div className="auth-links">
-          <span className="auth-link-highlight" onClick={() => navigate("/login")}>
-            로그인으로 돌아가기
-          </span>
+          <span className="auth-link-highlight" onClick={() => navigate("/login")}>로그인으로 돌아가기</span>
           <span className="auth-links-dot">·</span>
-          <span className="auth-link-highlight" onClick={() => navigate("/find-pw")}>
-            비밀번호 찾기
-          </span>
+          <span className="auth-link-highlight" onClick={() => navigate("/find-pw")}>비밀번호 찾기</span>
         </div>
       </div>
     </div>

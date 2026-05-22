@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Lock, Mail } from "lucide-react";
+import { signupApi } from "../api/api";
 
 export default function Sign() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
+    name: "",
     email: "",
     password: "",
     passwordConfirm: "",
-    userEmail: "",
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const update = (key: string, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -19,14 +21,14 @@ export default function Sign() {
     e.preventDefault();
     setError("");
 
-    if (!form.email.trim() || !form.password.trim() || !form.passwordConfirm.trim()) {
+    if (!form.name.trim() || !form.email.trim() || !form.password.trim() || !form.passwordConfirm.trim()) {
       setError("모든 필수 항목을 입력해주세요.");
       return;
     }
 
-    const idRegex = /^[a-zA-Z0-9]{6}$/;
-    if (!idRegex.test(form.email)) {
-      setError("아이디는 영문 또는 숫자 조합으로 6자여야 합니다.");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      setError("올바른 이메일 형식을 입력해주세요.");
       return;
     }
 
@@ -36,39 +38,20 @@ export default function Sign() {
     }
 
     if (form.password.length < 6) {
-      setError("비밀번호는 영문, 숫자 포함 6자 이상이어야 합니다.");
+      setError("비밀번호는 6자 이상이어야 합니다.");
       return;
     }
 
-    const users = JSON.parse(localStorage.getItem("ff_users") || "[]");
-    if (users.find((u: any) => u.email === form.email)) {
-      setError("이미 존재하는 아이디입니다.");
-      return;
-    }
-
-    users.push({
-      email: form.email,
-      password: form.password,
-      userEmail: form.userEmail || "",
-    });
-    localStorage.setItem("ff_users", JSON.stringify(users));
-
+    setLoading(true);
     try {
-      await fetch("http://localhost:8080/api/v1/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: form.userEmail || undefined,
-          password: form.password,
-          name: form.email,
-        }),
-      });
-    } catch {
-      // 백엔드 미연결
+      await signupApi(form.email, form.password, form.name);
+      alert("회원가입이 완료되었습니다! 로그인해주세요.");
+      navigate("/login");
+    } catch (err: any) {
+      setError(err.message || "회원가입에 실패했습니다.");
+    } finally {
+      setLoading(false);
     }
-
-    alert("회원가입이 완료되었습니다!");
-    navigate("/login");
   };
 
   return (
@@ -90,18 +73,27 @@ export default function Sign() {
 
         <form onSubmit={handleSignup}>
           <div className="auth-field">
-            <label>아이디</label>
+            <label>이름</label>
             <div className="auth-input-wrap">
               <User size={16} className="auth-input-icon" />
               <input
                 type="text"
-                placeholder="영문/숫자 6자"
+                placeholder="이름을 입력해주세요"
+                value={form.name}
+                onChange={(e) => update("name", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="auth-field">
+            <label>이메일</label>
+            <div className="auth-input-wrap">
+              <Mail size={16} className="auth-input-icon" />
+              <input
+                type="email"
+                placeholder="example@email.com"
                 value={form.email}
-                maxLength={6}
-                onChange={(e) => {
-                  const v = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
-                  update("email", v);
-                }}
+                onChange={(e) => update("email", e.target.value)}
               />
             </div>
           </div>
@@ -112,7 +104,7 @@ export default function Sign() {
               <Lock size={16} className="auth-input-icon" />
               <input
                 type="password"
-                placeholder="영문, 숫자 포함 6자 이상"
+                placeholder="6자 이상 입력"
                 value={form.password}
                 onChange={(e) => update("password", e.target.value)}
               />
@@ -132,31 +124,16 @@ export default function Sign() {
             </div>
           </div>
 
-          <div className="auth-field">
-            <label>이메일</label>
-            <div className="auth-input-wrap">
-              <Mail size={16} className="auth-input-icon" />
-              <input
-                type="email"
-                placeholder="example@email.com"
-                value={form.userEmail}
-                onChange={(e) => update("userEmail", e.target.value)}
-              />
-            </div>
-          </div>
-
           {error && <p className="auth-error">{error}</p>}
 
-          <button type="submit" className="auth-submit">
-            회원가입 완료 →
+          <button type="submit" className="auth-submit" disabled={loading}>
+            {loading ? "가입 중..." : "회원가입 완료 →"}
           </button>
         </form>
 
         <div className="auth-links">
           <span>이미 계정이 있으신가요?</span>
-          <span className="auth-link-highlight" onClick={() => navigate("/login")}>
-            로그인하기
-          </span>
+          <span className="auth-link-highlight" onClick={() => navigate("/login")}>로그인하기</span>
         </div>
       </div>
     </div>
