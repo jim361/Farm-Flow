@@ -331,7 +331,6 @@ function AppBody() {
               <TemplatePage
                 userWorkflows={userWorkflows}
                 onDeleteWorkflow={handleDeleteWorkflow}
-                onApplyBuiltinTemplate={handleApplyBuiltinTemplate}
                 onApplyUserWorkflow={handleApplyUserWorkflow}
                 onRefreshWorkflows={fetchWorkflows}
               />

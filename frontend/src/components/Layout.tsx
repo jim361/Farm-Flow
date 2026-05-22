@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { AppHeader } from './AppHeader';
 import { getStoredScheduleEvents, SCHEDULE_UPDATED_EVENT } from './Scheduler/SchedulerData';
 import type { ScheduleEventItem } from './Scheduler/types';
 
