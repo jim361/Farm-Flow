@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Farm Flow MQTT Sensor Simulator</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f7f3;
+      --panel: #ffffff;
+      --ink: #17201a;
+      --muted: #667067;
+      --line: #dfe7dd;
+      --green: #2f7d46;
+      --blue: #3279b7;
+      --orange: #c56d23;
+      --red: #c0392b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, "Noto Sans KR", sans-serif;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.15;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 150px;
+      justify-content: center;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #9aa39c;
+    }
+
+    .dot.on { background: var(--green); }
+    .dot.err { background: var(--red); }
+
+    .connect-panel,
+    .log-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .connect-grid {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) 140px 140px auto auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    input,
+    button {
+      font: inherit;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      height: 40px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    button {
+      height: 40px;
+      border: 0;
+      border-radius: 7px;
+      padding: 0 14px;
+      cursor: pointer;
+      font-weight: 800;
+      color: #fff;
+      background: var(--green);
+    }
+
+    button.secondary { background: #53625a; }
+    button.blue { background: var(--blue); }
+    button:disabled { cursor: not-allowed; opacity: 0.55; }
+
+    .sensor-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .sensor-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .sensor-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .sensor-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .emoji { font-size: 30px; }
+
+    .value-readout {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--green);
+      white-space: nowrap;
+    }
+
+    .range-row {
+      display: grid;
+      grid-template-columns: 1fr 86px;
+      gap: 10px;
+      align-items: center;
+      margin: 12px 0;
+    }
+
+    input[type="range"] { width: 100%; }
+
+    .topic {
+      margin-top: 10px;
+      padding: 9px;
+      border-radius: 6px;
+      background: #eef3ed;
+      color: #304138;
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .log-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+      font-weight: 900;
+    }
+
+    pre {
+      min-height: 130px;
+      max-height: 260px;
+      overflow: auto;
+      margin: 0;
+      padding: 12px;
+      border-radius: 6px;
+      background: #17201a;
+      color: #d8f4dd;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 980px) {
+      header { align-items: start; flex-direction: column; }
+      .connect-grid { grid-template-columns: 1fr 1fr; }
+      .sensor-grid { grid-template-columns: repeat(2, minmax(210px, 1fr)); }
+    }
+
+    @media (max-width: 620px) {
+      main { width: min(100% - 20px, 1180px); padding-top: 18px; }
+      .connect-grid,
+      .sensor-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Farm Flow 센서 시뮬레이터</h1>
+        <p class="subtitle">노트북에서 온도, 습도, CO2, 조도 값을 조절하고 MQTT로 서버에 전송합니다.</p>
+      </div>
+      <div class="status-pill"><span id="statusDot" class="dot"></span><span id="statusText">연결 대기</span></div>
+    </header>
+
+    <section class="connect-panel">
+      <div class="connect-grid">
+        <div>
+          <label for="brokerUrl">MQTT WebSocket 주소</label>
+          <input id="brokerUrl" type="text" value="ws://localhost:9001" />
+        </div>
+        <div>
+          <label for="intervalMs">자동 전송 간격(ms)</label>
+          <input id="intervalMs" type="number" min="500" step="500" value="2000" />
+        </div>
+        <div>
+          <label for="greenhouseId">온실 표시명</label>
+          <input id="greenhouseId" type="text" value="GH-001" />
+        </div>
+        <button id="connectBtn" type="button">연결</button>
+        <button id="autoBtn" type="button" class="secondary" disabled>자동 시작</button>
+      </div>
+    </section>
+
+    <section id="sensorGrid" class="sensor-grid"></section>
+
+    <section class="log-panel">
+      <div class="log-title">
+        <span>전송 로그</span>
+        <button id="clearLogBtn" class="secondary" type="button">로그 지우기</button>
+      </div>
+      <pre id="logOutput">아직 전송된 메시지가 없습니다.</pre>
+    </section>
+  </main>
+
+  <script>
+    const sensors = [
+      { type: "temperature", label: "온도", emoji: "🌡️", unit: "C", min: -10, max: 50, step: 0.1, value: 24.5, uid: "DEV-TEMP" },
+      { type: "humidity", label: "습도", emoji: "💧", unit: "%", min: 0, max: 100, step: 1, value: 62, uid: "DEV-HUM" },
+      { type: "co2", label: "CO2", emoji: "🫧", unit: "ppm", min: 300, max: 2000, step: 10, value: 850, uid: "DEV-CO2" },
+      { type: "light", label: "조도", emoji: "☀️", unit: "lux", min: 0, max: 70000, step: 100, value: 18000, uid: "DEV-LIGHT" },
+    ];
+
+    let client = null;
+    let autoTimer = null;
+    const logLines = [];
+
+    const sensorGrid = document.getElementById("sensorGrid");
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+    const connectBtn = document.getElementById("connectBtn");
+    const autoBtn = document.getElementById("autoBtn");
+    const logOutput = document.getElementById("logOutput");
+
+    function topicFor(uid) {
+      return `farmflow/devices/${uid}/telemetry`;
+    }
+
+    function localIsoString() {
+      const date = new Date();
+      const offset = -date.getTimezoneOffset();
+      const sign = offset >= 0 ? "+" : "-";
+      const pad = (num) => String(Math.floor(Math.abs(num))).padStart(2, "0");
+      const hours = pad(offset / 60);
+      const minutes = pad(offset % 60);
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}${sign}${hours}:${minutes}`;
+    }
+
+    function setStatus(kind, text) {
+      statusDot.className = `dot ${kind === "on" ? "on" : kind === "err" ? "err" : ""}`;
+      statusText.textContent = text;
+      autoBtn.disabled = kind !== "on";
+      document.querySelectorAll("[data-publish]").forEach((button) => {
+        button.disabled = kind !== "on";
+      });
+    }
+
+    function log(message, payload) {
+      const text = payload ? `${message}\n${JSON.stringify(payload, null, 2)}` : message;
+      logLines.unshift(`[${new Date().toLocaleTimeString()}] ${text}`);
+      logOutput.textContent = logLines.slice(0, 20).join("\n\n");
+    }
+
+    function readSensor(index) {
+      const sensor = sensors[index];
+      const uid = document.getElementById(`uid-${index}`).value.trim() || sensor.uid;
+      const value = Number(document.getElementById(`value-${index}`).value);
+      return {
+        topic: topicFor(uid),
+        payload: {
+          deviceUid: uid,
+          sensorType: sensor.type,
+          value,
+          unit: sensor.unit,
+          greenhouse: document.getElementById("greenhouseId").value.trim() || "GH-001",
+          measuredAt: localIsoString(),
+        },
+      };
+    }
+
+    function publishSensor(index) {
+      if (!client || !client.connected) {
+        log("MQTT 브로커에 먼저 연결하세요.");
+        return;
+      }
+      const { topic, payload } = readSensor(index);
+      client.publish(topic, JSON.stringify(payload), { qos: 0, retain: false });
+      log(`PUBLISH ${topic}`, payload);
+    }
+
+    function publishAll() {
+      sensors.forEach((_, index) => publishSensor(index));
+    }
+
+    function renderSensors() {
+      sensorGrid.innerHTML = sensors.map((sensor, index) => `
+        <article class="sensor-card">
+          <div class="sensor-head">
+            <div class="sensor-title"><span class="emoji">${sensor.emoji}</span><span>${sensor.label}</span></div>
+            <div id="readout-${index}" class="value-readout">${sensor.value}${sensor.unit}</div>
+          </div>
+          <label for="uid-${index}">${sensor.label} 센서 UID</label>
+          <input id="uid-${index}" type="text" value="${sensor.uid}" />
+          <div class="range-row">
+            <input id="range-${index}" type="range" min="${sensor.min}" max="${sensor.max}" step="${sensor.step}" value="${sensor.value}" />
+            <input id="value-${index}" type="number" min="${sensor.min}" max="${sensor.max}" step="${sensor.step}" value="${sensor.value}" />
+          </div>
+          <div id="topic-${index}" class="topic">${topicFor(sensor.uid)}</div>
+          <div class="card-actions">
+            <button data-publish="${index}" type="button" disabled>전송</button>
+            <button data-copy="${index}" class="blue" type="button">Topic 복사</button>
+          </div>
+        </article>
+      `).join("");
+
+      sensors.forEach((sensor, index) => {
+        const range = document.getElementById(`range-${index}`);
+        const value = document.getElementById(`value-${index}`);
+        const uid = document.getElementById(`uid-${index}`);
+        const readout = document.getElementById(`readout-${index}`);
+        const topic = document.getElementById(`topic-${index}`);
+        const sync = (next) => {
+          range.value = next;
+          value.value = next;
+          readout.textContent = `${next}${sensor.unit}`;
+        };
+        const syncTopic = () => {
+          topic.textContent = topicFor(uid.value.trim() || sensor.uid);
+        };
+        range.addEventListener("input", () => sync(range.value));
+        value.addEventListener("input", () => sync(value.value));
+        uid.addEventListener("input", syncTopic);
+      });
+
+      document.querySelectorAll("[data-publish]").forEach((button) => {
+        button.addEventListener("click", () => publishSensor(Number(button.dataset.publish)));
+      });
+      document.querySelectorAll("[data-copy]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const index = Number(button.dataset.copy);
+          const uid = document.getElementById(`uid-${index}`).value.trim() || sensors[index].uid;
+          await navigator.clipboard.writeText(topicFor(uid));
+          log(`복사됨: ${topicFor(uid)}`);
+        });
+      });
+    }
+
+    connectBtn.addEventListener("click", () => {
+      if (client && client.connected) {
+        client.end(true);
+        return;
+      }
+
+      const brokerUrl = document.getElementById("brokerUrl").value.trim();
+      setStatus("wait", "연결 중");
+      client = mqtt.connect(brokerUrl, {
+        clientId: `farmflow-sensor-panel-${Math.random().toString(16).slice(2)}`,
+        clean: true,
+        connectTimeout: 5000,
+        reconnectPeriod: 2000,
+      });
+
+      client.on("connect", () => {
+        connectBtn.textContent = "연결 해제";
+        setStatus("on", "MQTT 연결됨");
+        log(`CONNECTED ${brokerUrl}`);
+      });
+      client.on("close", () => {
+        connectBtn.textContent = "연결";
+        setStatus("wait", "연결 끊김");
+        if (autoTimer) autoBtn.click();
+      });
+      client.on("error", (error) => {
+        setStatus("err", "연결 오류");
+        log(`ERROR ${error.message || error}`);
+      });
+    });
+
+    autoBtn.addEventListener("click", () => {
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+        autoBtn.textContent = "자동 시작";
+        autoBtn.className = "secondary";
+        log("자동 전송 중지");
+        return;
+      }
+      const interval = Math.max(500, Number(document.getElementById("intervalMs").value) || 2000);
+      publishAll();
+      autoTimer = setInterval(publishAll, interval);
+      autoBtn.textContent = "자동 중지";
+      autoBtn.className = "blue";
+      log(`자동 전송 시작: ${interval}ms`);
+    });
+
+    document.getElementById("clearLogBtn").addEventListener("click", () => {
+      logLines.length = 0;
+      logOutput.textContent = "아직 전송된 메시지가 없습니다.";
+    });
+
+    renderSensors();
+    setStatus("wait", "연결 대기");
+  </script>
+</body>
+</html>
