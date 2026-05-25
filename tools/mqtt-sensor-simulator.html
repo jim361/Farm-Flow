@@ -80,7 +80,8 @@
     .dot.err { background: var(--red); }
 
     .connect-panel,
-    .log-panel {
+    .log-panel,
+    .demo-flow {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -132,16 +133,38 @@
 
     button.secondary { background: #53625a; }
     button.blue { background: var(--blue); }
+    button.orange { background: var(--orange); }
+    button.red { background: var(--red); }
     button:disabled { cursor: not-allowed; opacity: 0.55; }
 
-    .sensor-grid {
+    .demo-flow h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+    }
+
+    .demo-flow p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .sim-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(210px, 1fr));
+      grid-template-columns: minmax(0, 1fr) 320px;
       gap: 14px;
+      align-items: stretch;
       margin-bottom: 16px;
     }
 
-    .sensor-card {
+    .sensor-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(210px, 1fr));
+      gap: 14px;
+    }
+
+    .sensor-card,
+    .fan-card {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -194,11 +217,67 @@
       overflow-wrap: anywhere;
     }
 
-    .card-actions {
+    .card-actions,
+    .fan-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
       margin-top: 12px;
+    }
+
+    .fan-visual {
+      display: grid;
+      place-items: center;
+      min-height: 190px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8faf7;
+      margin: 12px 0;
+    }
+
+    .fan-blade {
+      width: 118px;
+      height: 118px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #e9f4ed;
+      border: 8px solid #cfe1d3;
+      font-size: 58px;
+      transition: transform 0.25s ease, background 0.25s ease;
+    }
+
+    .fan-card.running .fan-blade {
+      background: #dff3e6;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .fan-state {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 8px 0 0;
+      font-weight: 900;
+    }
+
+    .fan-state strong { color: var(--muted); }
+    .fan-card.running .fan-state strong { color: var(--green); }
+
+    .last-command {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      background: #f2f5f1;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+      min-height: 54px;
     }
 
     .log-title {
@@ -226,7 +305,7 @@
     @media (max-width: 980px) {
       header { align-items: start; flex-direction: column; }
       .connect-grid { grid-template-columns: 1fr 1fr; }
-      .sensor-grid { grid-template-columns: repeat(2, minmax(210px, 1fr)); }
+      .sim-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 620px) {
@@ -241,8 +320,8 @@
   <main>
     <header>
       <div>
-        <h1>Farm Flow 센서 시뮬레이터</h1>
-        <p class="subtitle">노트북에서 온도, 습도, CO2, 조도 값을 조절하고 MQTT로 서버에 전송합니다.</p>
+        <h1>Farm Flow 센서/환기팬 시뮬레이터</h1>
+        <p class="subtitle">온도 센서값을 MQTT로 보내고, 워크플로우 명령을 받은 환기팬이 작동하는 모습을 보여줍니다.</p>
       </div>
       <div class="status-pill"><span id="statusDot" class="dot"></span><span id="statusText">연결 대기</span></div>
     </header>
@@ -266,14 +345,43 @@
       </div>
     </section>
 
-    <section id="sensorGrid" class="sensor-grid"></section>
+    <section class="demo-flow">
+      <h2>시연 흐름</h2>
+      <p>웹 워크플로우 빌더에서 온도 센서와 환기팬을 연결한 뒤 실행합니다. 이 화면에서 온도 값을 임계값 이상으로 올리면 서버가 팬 command topic으로 ON을 발행하고, 오른쪽 환기팬이 작동 상태로 바뀝니다.</p>
+    </section>
+
+    <section class="sim-grid">
+      <div id="sensorGrid" class="sensor-grid"></div>
+
+      <aside id="fanCard" class="fan-card">
+        <div class="sensor-head">
+          <div class="sensor-title"><span class="emoji">🌀</span><span>환기팬</span></div>
+          <div id="fanReadout" class="value-readout">OFF</div>
+        </div>
+        <label for="fanUid">환기팬 액추에이터 UID</label>
+        <input id="fanUid" type="text" value="DEV-FAN" />
+        <div id="fanTopic" class="topic">farmflow/devices/DEV-FAN/command</div>
+        <div class="fan-visual">
+          <div class="fan-blade">✦</div>
+        </div>
+        <div class="fan-state">
+          <span>작동 상태</span>
+          <strong id="fanStateText">대기 중</strong>
+        </div>
+        <div id="lastCommand" class="last-command">아직 수신한 워크플로우 명령이 없습니다.</div>
+        <div class="fan-actions">
+          <button id="fanOnBtn" class="orange" type="button" disabled>ON 명령 테스트</button>
+          <button id="fanOffBtn" class="secondary" type="button" disabled>OFF 명령 테스트</button>
+        </div>
+      </aside>
+    </section>
 
     <section class="log-panel">
       <div class="log-title">
-        <span>전송 로그</span>
+        <span>MQTT 로그</span>
         <button id="clearLogBtn" class="secondary" type="button">로그 지우기</button>
       </div>
-      <pre id="logOutput">아직 전송된 메시지가 없습니다.</pre>
+      <pre id="logOutput">아직 전송 또는 수신된 메시지가 없습니다.</pre>
     </section>
   </main>
 
@@ -287,6 +395,7 @@
 
     let client = null;
     let autoTimer = null;
+    let subscribedFanTopic = null;
     const logLines = [];
 
     const sensorGrid = document.getElementById("sensorGrid");
@@ -294,10 +403,26 @@
     const statusText = document.getElementById("statusText");
     const connectBtn = document.getElementById("connectBtn");
     const autoBtn = document.getElementById("autoBtn");
+    const fanCard = document.getElementById("fanCard");
+    const fanUid = document.getElementById("fanUid");
+    const fanTopic = document.getElementById("fanTopic");
+    const fanReadout = document.getElementById("fanReadout");
+    const fanStateText = document.getElementById("fanStateText");
+    const lastCommand = document.getElementById("lastCommand");
+    const fanOnBtn = document.getElementById("fanOnBtn");
+    const fanOffBtn = document.getElementById("fanOffBtn");
     const logOutput = document.getElementById("logOutput");
 
-    function topicFor(uid) {
+    function telemetryTopicFor(uid) {
       return `farmflow/devices/${uid}/telemetry`;
+    }
+
+    function commandTopicFor(uid) {
+      return `farmflow/devices/${uid}/command`;
+    }
+
+    function currentFanUid() {
+      return fanUid.value.trim() || "DEV-FAN";
     }
 
     function localIsoString() {
@@ -313,16 +438,39 @@
     function setStatus(kind, text) {
       statusDot.className = `dot ${kind === "on" ? "on" : kind === "err" ? "err" : ""}`;
       statusText.textContent = text;
-      autoBtn.disabled = kind !== "on";
+      const connected = kind === "on";
+      autoBtn.disabled = !connected;
+      fanOnBtn.disabled = !connected;
+      fanOffBtn.disabled = !connected;
       document.querySelectorAll("[data-publish]").forEach((button) => {
-        button.disabled = kind !== "on";
+        button.disabled = !connected;
       });
     }
 
     function log(message, payload) {
       const text = payload ? `${message}\n${JSON.stringify(payload, null, 2)}` : message;
       logLines.unshift(`[${new Date().toLocaleTimeString()}] ${text}`);
-      logOutput.textContent = logLines.slice(0, 20).join("\n\n");
+      logOutput.textContent = logLines.slice(0, 24).join("\n\n");
+    }
+
+    function updateFanTopic() {
+      fanTopic.textContent = commandTopicFor(currentFanUid());
+    }
+
+    function subscribeFanCommand() {
+      if (!client || !client.connected) return;
+      const nextTopic = commandTopicFor(currentFanUid());
+      if (subscribedFanTopic && subscribedFanTopic !== nextTopic) {
+        client.unsubscribe(subscribedFanTopic);
+      }
+      subscribedFanTopic = nextTopic;
+      client.subscribe(nextTopic, { qos: 0 }, (error) => {
+        if (error) {
+          log(`SUBSCRIBE ERROR ${nextTopic}: ${error.message || error}`);
+          return;
+        }
+        log(`SUBSCRIBE ${nextTopic}`);
+      });
     }
 
     function readSensor(index) {
@@ -330,7 +478,7 @@
       const uid = document.getElementById(`uid-${index}`).value.trim() || sensor.uid;
       const value = Number(document.getElementById(`value-${index}`).value);
       return {
-        topic: topicFor(uid),
+        topic: telemetryTopicFor(uid),
         payload: {
           deviceUid: uid,
           sensorType: sensor.type,
@@ -356,6 +504,59 @@
       sensors.forEach((_, index) => publishSensor(index));
     }
 
+    function setFanRunning(isRunning, payload) {
+      fanCard.classList.toggle("running", isRunning);
+      fanReadout.textContent = isRunning ? "ON" : "OFF";
+      fanStateText.textContent = isRunning ? "환기 중" : "정지";
+      lastCommand.textContent = payload
+        ? `마지막 명령: ${JSON.stringify(payload)}`
+        : "수동으로 팬 상태를 변경했습니다.";
+    }
+
+    function parseCommandPayload(message) {
+      const text = message.toString().trim();
+      if (!text) return { command: "OFF" };
+      try {
+        const parsed = JSON.parse(text);
+        return parsed && typeof parsed === "object" ? parsed : { command: text };
+      } catch {
+        return { command: text };
+      }
+    }
+
+    function handleCommand(topic, message) {
+      if (topic !== commandTopicFor(currentFanUid())) return;
+      const payload = parseCommandPayload(message);
+      const command = String(payload.command || payload.status || payload.action || "").toUpperCase();
+      const shouldRun = ["ON", "OPEN", "START", "RUN", "RUNNING"].includes(command);
+      const shouldStop = ["OFF", "CLOSE", "STOP", "IDLE"].includes(command);
+
+      if (!shouldRun && !shouldStop) {
+        log(`COMMAND IGNORED ${topic}`, payload);
+        return;
+      }
+
+      setFanRunning(shouldRun, payload);
+      log(`COMMAND ${topic}`, payload);
+    }
+
+    function publishFanCommand(command) {
+      if (!client || !client.connected) {
+        log("MQTT 브로커에 먼저 연결하세요.");
+        return;
+      }
+      const payload = {
+        deviceUid: currentFanUid(),
+        command,
+        source: "simulator-test",
+        reason: command === "ON" ? "manual workflow command test" : "manual stop command test",
+        issuedAt: localIsoString(),
+      };
+      const topic = commandTopicFor(currentFanUid());
+      client.publish(topic, JSON.stringify(payload), { qos: 0, retain: false });
+      log(`PUBLISH ${topic}`, payload);
+    }
+
     function renderSensors() {
       sensorGrid.innerHTML = sensors.map((sensor, index) => `
         <article class="sensor-card">
@@ -369,7 +570,7 @@
             <input id="range-${index}" type="range" min="${sensor.min}" max="${sensor.max}" step="${sensor.step}" value="${sensor.value}" />
             <input id="value-${index}" type="number" min="${sensor.min}" max="${sensor.max}" step="${sensor.step}" value="${sensor.value}" />
           </div>
-          <div id="topic-${index}" class="topic">${topicFor(sensor.uid)}</div>
+          <div id="topic-${index}" class="topic">${telemetryTopicFor(sensor.uid)}</div>
           <div class="card-actions">
             <button data-publish="${index}" type="button" disabled>전송</button>
             <button data-copy="${index}" class="blue" type="button">Topic 복사</button>
@@ -389,7 +590,7 @@
           readout.textContent = `${next}${sensor.unit}`;
         };
         const syncTopic = () => {
-          topic.textContent = topicFor(uid.value.trim() || sensor.uid);
+          topic.textContent = telemetryTopicFor(uid.value.trim() || sensor.uid);
         };
         range.addEventListener("input", () => sync(range.value));
         value.addEventListener("input", () => sync(value.value));
@@ -403,8 +604,8 @@
         button.addEventListener("click", async () => {
           const index = Number(button.dataset.copy);
           const uid = document.getElementById(`uid-${index}`).value.trim() || sensors[index].uid;
-          await navigator.clipboard.writeText(topicFor(uid));
-          log(`복사됨: ${topicFor(uid)}`);
+          await navigator.clipboard.writeText(telemetryTopicFor(uid));
+          log(`복사됨: ${telemetryTopicFor(uid)}`);
         });
       });
     }
@@ -428,7 +629,9 @@
         connectBtn.textContent = "연결 해제";
         setStatus("on", "MQTT 연결됨");
         log(`CONNECTED ${brokerUrl}`);
+        subscribeFanCommand();
       });
+      client.on("message", handleCommand);
       client.on("close", () => {
         connectBtn.textContent = "연결";
         setStatus("wait", "연결 끊김");
@@ -457,12 +660,21 @@
       log(`자동 전송 시작: ${interval}ms`);
     });
 
+    fanUid.addEventListener("input", () => {
+      updateFanTopic();
+      subscribeFanCommand();
+    });
+    fanOnBtn.addEventListener("click", () => publishFanCommand("ON"));
+    fanOffBtn.addEventListener("click", () => publishFanCommand("OFF"));
+
     document.getElementById("clearLogBtn").addEventListener("click", () => {
       logLines.length = 0;
-      logOutput.textContent = "아직 전송된 메시지가 없습니다.";
+      logOutput.textContent = "아직 전송 또는 수신된 메시지가 없습니다.";
     });
 
     renderSensors();
+    updateFanTopic();
+    setFanRunning(false);
     setStatus("wait", "연결 대기");
   </script>
 </body>
