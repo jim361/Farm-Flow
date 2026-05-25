@@ -41,7 +41,18 @@ services:
     volumes:
       - redis_data:/data
 
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: farmflow-mqtt
+    restart: always
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt_data:/mosquitto/data
+
 volumes:
   pg_data:
   influx_data:
   redis_data:
+  mqtt_data:
