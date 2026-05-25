@@ -7,46 +7,54 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DeviceService {
 
+    private static final String DEFAULT_STATUS = "ACTIVE";
+    private static final String TELEMETRY_TOPIC_TEMPLATE = "farmflow/devices/%s/telemetry";
+
     private final DeviceRepository deviceRepository;
 
-    /**
-     * 1. 새 장치 등록 (장치 등록 화면)
-     */
     @Transactional
     public Device createDevice(Device request) {
-        // 엔티티 구조 변경에 따른 빌더 로직 수정
+        String uid = hasText(request.getUid()) ? request.getUid() : generateDeviceUid();
+        String mqttTopic = hasText(request.getMqttTopic())
+                ? request.getMqttTopic()
+                : String.format(TELEMETRY_TOPIC_TEMPLATE, uid);
+        String status = hasText(request.getStatus()) ? request.getStatus() : DEFAULT_STATUS;
+
         Device device = Device.builder()
-                .uid(request.getUid())              // 프론트에서 생성한 UID 사용
-                .greenhouseId(request.getGreenhouseId()) // 소속 온실 ID
-                .name(request.getName())            // 예: "온실 A구역 온도 센서"
-                .deviceType(request.getDeviceType()) // SENSOR 또는 ACTUATOR
-                .sensorType(request.getSensorType()) // TEMP, HUMIDITY 등
-                .actuatorType(request.getActuatorType()) // BOILER, PUMP 등
-                .status("ACTIVE")                   // 등록 즉시 활성화 상태로 설정
+                .uid(uid)
+                .greenhouseId(request.getGreenhouseId())
+                .name(request.getName())
+                .deviceType(request.getDeviceType())
+                .sensorType(request.getSensorType())
+                .actuatorType(request.getActuatorType())
+                .mqttTopic(mqttTopic)
+                .status(status)
                 .lastValue("0")
                 .build();
 
         return deviceRepository.save(device);
     }
 
-    /**
-     * 2. 전체 장치 목록 조회
-     */
     public List<Device> getAllDevices() {
         return deviceRepository.findAll();
     }
 
-    /**
-     * 3. 디바이스 타입별 장치 필터링 (로직 빌더 라이브러리용)
-     */
     public List<Device> getDevicesByDeviceType(String deviceType) {
-        // 기존 findByCategory를 엔티티 필드명에 맞춰 findByDeviceType으로 변경 필요 (Repository도 확인)
         return deviceRepository.findByDeviceType(deviceType);
+    }
+
+    private String generateDeviceUid() {
+        return "DEV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }
