@@ -13,14 +13,33 @@ docker compose up -d postgres influxdb redis mqtt
 
 Expose the broker as one of these addresses:
 
-- Preferred: `mqtt.<domain>:1883`
-- Fallback on the presentation network: `<server-pc-ip>:1883`
+- MQTT Explorer: `mqtt.<domain>:1883`
+- Browser simulator: `ws://mqtt.<domain>:9001`
+- Fallback on the presentation network: `<server-pc-ip>:1883` or `ws://<server-pc-ip>:9001`
 
 The broker is intentionally open for the demo:
 
-- protocol: raw MQTT
-- port: `1883`
+- raw MQTT port: `1883`
+- MQTT over WebSocket port: `9001`
 - anonymous access: enabled
+
+## Browser sensor simulator
+
+Open this file on the laptop:
+
+```txt
+tools/mqtt-sensor-simulator.html
+```
+
+Use one of these broker URLs:
+
+```txt
+ws://mqtt.<domain>:9001
+ws://<server-pc-ip>:9001
+ws://localhost:9001
+```
+
+The simulator shows temperature, humidity, CO2, and light cards. Put the registered device UID into each card, connect to the broker, then either publish one value or start automatic publishing.
 
 ## Device registration
 
