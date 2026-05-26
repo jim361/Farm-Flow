@@ -47,6 +47,7 @@ CREATE TABLE devices (
     id            BIGSERIAL PRIMARY KEY,
     uid           VARCHAR(20) UNIQUE NOT NULL,
     greenhouse_id BIGINT REFERENCES greenhouses(id),
+    name          VARCHAR(100) NOT NULL,
     device_type   VARCHAR(30) NOT NULL,
     sensor_type   VARCHAR(30),
     actuator_type VARCHAR(30),

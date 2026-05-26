@@ -3,6 +3,7 @@ package com.backend.mqtt;
 import com.backend.rule.FarmRuleEngine;
 import com.backend.sensor.ControlCommand;
 import com.backend.sensor.SensorData;
+import com.backend.tracing.SensorPushService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ public class MqttPipeline {
     private final FarmRuleEngine ruleEngine;
     private final MqttPahoMessageHandler mqttOutboundHandler;
     private final ObjectMapper objectMapper;
+    private final SensorPushService sensorPushService;
 
     @Value("${mqtt.topic.control}")
     private String controlTopic;
@@ -35,6 +37,8 @@ public class MqttPipeline {
             SensorData data = objectMapper.readValue(payload, SensorData.class);
             log.info("센서 데이터 수신 [{}]: temp={}, humidity={}, lux={}, co2={}",
                 topic, data.getTemperature(), data.getHumidity(), data.getLux(), data.getCo2());
+
+            sensorPushService.pushSensorData(data);
 
             ControlCommand cmd = ruleEngine.evaluate(data);
 
