@@ -1,34 +1,23 @@
-HELP.md
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/resources/gradle/wrapper/gradle-wrapper.jar
-!**/src/test/resources/gradle/wrapper/gradle-wrapper.jar
+# Dependencies
+node_modules/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+# Build output
+dist/
+*.local
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/resources/
-!**/src/test/resources/
+# Environment
+.env
+.env.*.local
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
 
-### VS Code ###
-.vscode/
+# Editor
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Vite
+*.tsbuildinfo
