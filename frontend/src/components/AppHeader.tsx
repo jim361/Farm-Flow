@@ -10,6 +10,7 @@ const nav = [
   { to: "/devices", label: "장치등록" },
   { to: "/scheduler", label: "스케줄러" },
   { to: "/templates", label: "템플릿" },
+  { to: "/simulation", label: "시뮬레이션" },
 ];
 
 type AppHeaderProps = {

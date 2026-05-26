@@ -24,6 +24,7 @@ import {
   type LogicBuilderHandle,
 } from "./page/LogicBuilderPage";
 import { TemplatePage, ventilationNodes, ventilationEdges } from "./page/TemplatePage";
+import SimulationPage from "./page/SimulationPage";
 import {
   fetchDevicesApi,
   fetchWorkflowsApi,
@@ -339,6 +340,7 @@ function AppBody() {
           />
         </Route>
 
+        <Route path="/simulation" element={<SimulationPage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
 

@@ -1,8 +1,16 @@
+import { useEffect, useState, useCallback, useRef } from 'react';
 import DashboardCard from './Dashboard';
 import DashboardLayout from './DashboardLayout';
-import { metricsNow } from './mockDashboardDb';
+import { metricsNow, type MetricItem } from './mockDashboardDb';
+import { evaluateSensorApi } from '../../api/api';
+import { useWebSocket } from '../../hooks/useWebSocket';
 
-type MetricItem = (typeof metricsNow)[number];
+interface SensorPayload {
+  temperature: number;
+  humidity: number;
+  lux: number;
+  co2: number;
+}
 
 interface MetricsSectionProps {
   data?: MetricItem[];
@@ -10,23 +18,84 @@ interface MetricsSectionProps {
   onRefreshAll?: () => void;
 }
 
-const MetricsSection = ({ data = metricsNow, isLoading = false, onRefreshAll }: MetricsSectionProps) => {
+const MetricsSection = ({ data: externalData, isLoading: externalLoading = false, onRefreshAll }: MetricsSectionProps) => {
+  const [data, setData] = useState<MetricItem[]>(externalData || metricsNow);
+  const [isLoading, setIsLoading] = useState(false);
+  const [controlActions, setControlActions] = useState<string[]>([]);
+  const prevDataRef = useRef<MetricItem[]>(externalData || metricsNow);
+
+  // WebSocket으로 실시간 센서 데이터 수신 — 디자인 변경 없이 값만 업데이트
+  useWebSocket<SensorPayload>('/topic/sensor', useCallback((payload) => {
+    setData(prev => {
+      const next = prev.map(m => {
+        const prevVal = m.value;
+        let newVal = prevVal;
+        if (m.id === 'temp') newVal = payload.temperature;
+        else if (m.id === 'humidity') newVal = payload.humidity;
+        else if (m.id === 'light') newVal = payload.lux;
+        else if (m.id === 'co2') newVal = payload.co2;
+        const trend = Math.round((newVal - prevVal) * 10) / 10;
+        const state: 'stable' | 'warning' =
+          (m.id === 'temp' && newVal > 30) ||
+          (m.id === 'co2' && newVal > 1000) ||
+          (m.id === 'humidity' && newVal < 60)
+            ? 'warning' : 'stable';
+        return { ...m, value: newVal, trend, state };
+      });
+      prevDataRef.current = next;
+      return next;
+    });
+  }, []));
+
+  const fetchAndEvaluate = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const cur = prevDataRef.current;
+      const result = await evaluateSensorApi({
+        temperature: cur.find(m => m.id === 'temp')?.value ?? 24,
+        humidity: cur.find(m => m.id === 'humidity')?.value ?? 63,
+        lux: cur.find(m => m.id === 'light')?.value ?? 500,
+        co2: cur.find(m => m.id === 'co2')?.value ?? 800,
+        latitude: 37.5,
+        longitude: 127.0,
+      });
+      setControlActions(result.actions?.length > 0 ? result.actions : []);
+    } catch {
+      // 백엔드 미연결 시 무시
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (externalData) setData(externalData);
+  }, [externalData]);
+
+  const handleRefresh = () => {
+    fetchAndEvaluate();
+    onRefreshAll?.();
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      {/* 한글 주석: 센서 데이터 통합 갱신 버튼 */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
+        {controlActions.length > 0 && (
+          <div style={{ fontSize: '12px', color: '#bd5f36', background: '#fff3ef', padding: '4px 10px', borderRadius: '6px', border: '1px solid #f9c8b4' }}>
+            ⚡ 자동 제어 발동: {controlActions.join(', ')}
+          </div>
+        )}
         <button
           type="button"
           className="ff-btn-save"
-          onClick={onRefreshAll}
-          disabled={isLoading}
+          onClick={handleRefresh}
+          disabled={isLoading || externalLoading}
           style={{
             minHeight: '40px',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.85 : 1,
+            cursor: (isLoading || externalLoading) ? 'not-allowed' : 'pointer',
+            opacity: (isLoading || externalLoading) ? 0.85 : 1,
           }}
         >
-          {isLoading ? '데이터 통합 갱신 중...' : '데이터 통합 갱신'}
+          {(isLoading || externalLoading) ? '데이터 통합 갱신 중...' : '데이터 통합 갱신'}
         </button>
       </div>
 

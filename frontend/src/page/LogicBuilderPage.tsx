@@ -1,4 +1,4 @@
-﻿import {
+import {
   useCallback,
   useEffect,
   useImperativeHandle,
@@ -23,6 +23,7 @@ import {
 } from "@xyflow/react";
 // 프로젝트의 실제 경로에 맞춰 import 경로를 확인하세요.
 import { SensorNode, ConditionNode, ActionNode, reconnect } from "../flow/logicNodes";
+import { useWebSocket } from "../hooks/useWebSocket";
 import type { LibraryDevice } from "../App";
   
 // 노드 타입 정의
@@ -103,6 +104,8 @@ export const LogicBuilderPage = forwardRef<LogicBuilderHandle, LogicBuilderPageP
     const [nodes, setNodes, onNodesChange] = useNodesState(snapshot.nodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(snapshot.edges);
     const [selectedCount, setSelectedCount] = useState(0);
+  const [traceLog, setTraceLog] = useState<{ruleName: string; actions: string[]; reasons: string[]; timestamp: string}[]>([]);
+  const [showTrace, setShowTrace] = useState(false);
   
     // 라이브러리 아이템 선택 상태
     const [selectedLibIds, setSelectedLibIds] = useState<Set<string>>(new Set());

@@ -273,3 +273,62 @@ export async function applyTemplateApi(templateId: string): Promise<void> {
   });
   if (!res.ok) throw new Error("템플릿 적용 실패");
 }
+// ─── 시뮬레이션(Simulation) API ───
+
+export type SimulationRequest = {
+  temperature: number;
+  humidity: number;
+  lux: number;
+  co2: number;
+  latitude?: number;
+  longitude?: number;
+  scenario?: string;
+};
+
+export type SimulationResult = {
+  scenario: string;
+  temperature: number;
+  humidity: number;
+  lux: number;
+  co2: number;
+  triggeredActions: string[];
+  reasons: string[];
+  safe: boolean;
+  simulatedAt: string;
+};
+
+/** FR-SIM: 직접 센서값 입력 시뮬레이션 */
+export async function runSimulationApi(req: SimulationRequest): Promise<SimulationResult> {
+  const res = await fetch(`${BASE_URL.replace('/api/v1', '')}/api/v1/simulation/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) throw new Error('시뮬레이션 실행 실패');
+  return res.json();
+}
+
+/** FR-SIM: 프리셋 시나리오 시뮬레이션 (HEAT_WAVE, COLD_WAVE, HIGH_CO2, DRY, NIGHT) */
+export async function runPresetSimulationApi(scenario: string): Promise<SimulationResult> {
+  const res = await fetch(`${BASE_URL.replace('/api/v1', '')}/api/v1/simulation/preset/${scenario}`);
+  if (!res.ok) throw new Error('프리셋 시뮬레이션 실패');
+  return res.json();
+}
+
+/** FR-SIM: 전체 시나리오 한 번에 실행 */
+export async function runAllSimulationsApi(): Promise<SimulationResult[]> {
+  const res = await fetch(`${BASE_URL.replace('/api/v1', '')}/api/v1/simulation/all`);
+  if (!res.ok) throw new Error('전체 시뮬레이션 실패');
+  return res.json();
+}
+
+/** FR-MON: 센서 데이터 평가 (Rule Engine 실행) */
+export async function evaluateSensorApi(req: SimulationRequest): Promise<{ actions: string[]; reasons: string[] }> {
+  const res = await fetch(`${BASE_URL.replace('/api/v1', '')}/api/sensor/evaluate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) throw new Error('센서 평가 실패');
+  return res.json();
+}
