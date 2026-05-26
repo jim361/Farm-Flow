@@ -51,6 +51,10 @@ public class Workflow {
     @Builder.Default
     private Integer version = 1;
 
+    @Version
+    @Column(name = "optimistic_version")
+    private Long optimisticVersion;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

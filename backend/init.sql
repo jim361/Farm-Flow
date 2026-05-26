@@ -68,6 +68,7 @@ CREATE TABLE workflows (
     rule_data     JSONB NOT NULL DEFAULT '{}',
     status        VARCHAR(20) DEFAULT 'DRAFT',
     version       INT DEFAULT 1,
+    optimistic_version BIGINT DEFAULT 0,
     created_at    TIMESTAMP DEFAULT NOW(),
     updated_at    TIMESTAMP DEFAULT NOW()
 );
