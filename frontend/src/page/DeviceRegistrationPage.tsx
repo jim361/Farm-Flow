@@ -1,5 +1,4 @@
-import { useState } from "react";
-import axios from "axios";
+import { useCallback, useEffect, useState } from "react";
 import {
   Activity,
   Cloud,
@@ -7,17 +6,69 @@ import {
   Fan,
   Flame,
   Gauge,
-  ToggleLeft,
   Wind,
+  Settings,
 } from "lucide-react";
 import type { LibraryDevice } from "../App";
+import {
+  registerDeviceApi,
+  updateDeviceStatusApi,
+  getToken,
+} from "../api/api";
 
 type SensorKind = "temp" | "humidity" | "co2";
 type ControllerKind = "boiler" | "vent" | "pump";
+type DeviceStatus = "ACTIVE" | "INACTIVE" | "ERROR";
+
+type RegisteredDevice = {
+  uid: string;
+  name: string;
+  deviceType: "SENSOR" | "ACTUATOR";
+  sensorType?: string | null;
+  actuatorType?: string | null;
+  mqttTopic?: string | null;
+  status: DeviceStatus;
+};
 
 type DeviceRegistrationPageProps = {
   onRegisterDevice: (device: LibraryDevice) => void;
 };
+
+const sensorIcon = (t?: string | null, size = 20) => {
+  switch (t?.toUpperCase()) {
+    case "TEMP": return <Gauge size={size} />;
+    case "HUMIDITY": return <Droplets size={size} />;
+    case "CO2": return <Cloud size={size} />;
+    default: return <Gauge size={size} />;
+  }
+};
+const actuatorIcon = (t?: string | null, size = 20) => {
+  switch (t?.toUpperCase()) {
+    case "BOILER": return <Flame size={size} />;
+    case "VENT": return <Fan size={size} />;
+    case "PUMP": return <Wind size={size} />;
+    default: return <Settings size={size} />;
+  }
+};
+const sensorLabel = (t?: string | null) => {
+  switch (t?.toUpperCase()) {
+    case "TEMP": return "온도 센서";
+    case "HUMIDITY": return "습도 센서";
+    case "CO2": return "CO₂ 센서";
+    default: return "센서";
+  }
+};
+const actuatorLabel = (t?: string | null) => {
+  switch (t?.toUpperCase()) {
+    case "BOILER": return "보일러";
+    case "VENT": return "환풍기";
+    case "PUMP": return "관수 펌프";
+    default: return "제어기";
+  }
+};
+
+const statusDot = (s: DeviceStatus) =>
+  s === "ACTIVE" ? "dev-dot--on" : s === "ERROR" ? "dev-dot--err" : "dev-dot--off";
 
 export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationPageProps) {
   const [sensor, setSensor] = useState<SensorKind | null>(null);
@@ -26,6 +77,32 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
   const [sensorName, setSensorName] = useState("");
   const [controllerName, setControllerName] = useState("");
 
+  const [devices, setDevices] = useState<RegisteredDevice[]>([]);
+  const [selectedDeviceUid, setSelectedDeviceUid] = useState<string | null>(null);
+
+  /** 기기 목록 조회 — JWT 포함 */
+  const fetchRegisteredDevices = useCallback(async () => {
+    try {
+      const token = getToken();
+      const res = await fetch("http://localhost:8080/api/v1/devices", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDevices(data);
+      }
+    } catch (err) {
+      console.error("기기 목록 조회 실패:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRegisteredDevices();
+  }, [fetchRegisteredDevices]);
+
+  /** FR-DEV-001: 기기 등록 — 백엔드 API 호출 (uid, mqtt_topic 자동생성) */
   const handleSubmit = async () => {
     const sn = sensorName.trim();
     const cn = controllerName.trim();
@@ -35,40 +112,62 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
       return;
     }
 
-    // 백엔드 Device.java 및 init.sql 구조에 맞춘 데이터 구성
+    const isSensor = sn.length > 0;
+
     const deviceData = {
-      uid: `DEV-${Math.random().toString(36).substring(2, 11).toUpperCase()}`, // 중복 방지 UID 생성
-      greenhouseId: 1, // 기본 온실 ID (init.sql의 첫 번째 하우스)
-      name: sn || cn,
-      deviceType: sn ? "SENSOR" : "ACTUATOR",
-      sensorType: sn && sensor ? sensor.toUpperCase() : null,
-      actuatorType: cn ? controller?.toUpperCase() : null,
-      status: "ACTIVE"
+      name: isSensor ? sn : cn,
+      deviceType: isSensor ? "SENSOR" : "ACTUATOR",
+      sensorType: isSensor && sensor ? sensor.toUpperCase() : null,
+      actuatorType: !isSensor && controller ? controller.toUpperCase() : null,
     };
 
     try {
-      // 백엔드 API 호출 (엔드포인트는 프로젝트 설정에 따라 확인 필요)
-      const response = await axios.post("http://localhost:8080/api/v1/devices", deviceData);
+      const responseData = await registerDeviceApi(deviceData);
 
-      if (response.status === 200 || response.status === 201) {
-        alert("장치가 성공적으로 등록되었습니다!");
+      alert("장치가 성공적으로 등록되었습니다!");
 
-        // 부모 컴포넌트의 상태 업데이트
-        onRegisterDevice({
-          id: response.data.id,
-          name: response.data.name,
-          deviceType: sn ? "SENSOR" : "ACTUATOR",
-          subtype: sn ? (sensor ?? undefined) : (controller ?? undefined),
-        });
-        
-        setSensorName("");
-        setControllerName("");
-      }
-    } catch (error) {
+      onRegisterDevice({
+        id: responseData.uid,
+        name: responseData.name,
+        deviceType: responseData.deviceType,
+        subtype: responseData.sensorType || responseData.actuatorType || undefined,
+      });
+
+      setSensorName("");
+      setControllerName("");
+      setSensor(null);
+      setController(null);
+      fetchRegisteredDevices();
+    } catch (error: any) {
       console.error("등록 중 에러 발생:", error);
-      alert("서버 연결에 실패했습니다.");
+      alert(error.message || "서버 연결에 실패했습니다.");
     }
   };
+
+  /** FR-DEV-002: 기기 상태 변경 — 백엔드 API 호출 */
+  const handleStatusChange = async (newStatus: DeviceStatus) => {
+    if (!selectedDeviceUid) {
+      alert("상태를 변경할 장치를 먼저 선택하세요.");
+      return;
+    }
+
+    // 프론트 상태 먼저 반영 (낙관적 업데이트)
+    setDevices((prev) =>
+      prev.map((d) =>
+        d.uid === selectedDeviceUid ? { ...d, status: newStatus } : d
+      )
+    );
+
+    try {
+      await updateDeviceStatusApi(selectedDeviceUid, newStatus);
+    } catch (err) {
+      console.error("백엔드 상태 동기화 실패:", err);
+      // 실패 시 다시 조회해서 원복
+      fetchRegisteredDevices();
+    }
+  };
+
+  const selectedDevice = devices.find((d) => d.uid === selectedDeviceUid);
 
   return (
     <>
@@ -79,6 +178,7 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
         </p>
       </div>
       <div className="dev-layout">
+        {/* ── 왼쪽: 등록 폼 ── */}
         <section className="dev-panel">
           <div className="dev-row-2">
             <div className="dev-field">
@@ -109,14 +209,16 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                 type="button"
                 className={`dev-type-card ${sensor === type ? "dev-type-card--on" : ""}`}
                 onClick={() => {
-                  setSensor(prev => prev === type ? null : type);
+                  setSensor((prev) => (prev === type ? null : type));
                   setController(null);
                 }}
               >
                 {type === "temp" && <Gauge size={28} />}
                 {type === "humidity" && <Droplets size={28} />}
                 {type === "co2" && <Cloud size={28} />}
-                <span>{type === "temp" ? "온도" : type === "humidity" ? "습도" : "CO₂"} 센서</span>
+                <span>
+                  {type === "temp" ? "온도" : type === "humidity" ? "습도" : "CO₂"} 센서
+                </span>
               </button>
             ))}
           </div>
@@ -129,14 +231,16 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                 type="button"
                 className={`dev-type-card ${controller === type ? "dev-type-card--on" : ""}`}
                 onClick={() => {
-                  setController(prev => prev === type ? null : type);
+                  setController((prev) => (prev === type ? null : type));
                   setSensor(null);
                 }}
               >
                 {type === "boiler" && <Flame size={28} />}
                 {type === "vent" && <Fan size={28} />}
                 {type === "pump" && <Wind size={28} />}
-                <span>{type === "boiler" ? "보일러" : type === "vent" ? "환풍기" : "관수 펌프"}</span>
+                <span>
+                  {type === "boiler" ? "보일러" : type === "vent" ? "환풍기" : "관수 펌프"}
+                </span>
               </button>
             ))}
           </div>
@@ -144,29 +248,110 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
           <div className="dev-logic-box">
             <span className="dev-badge">활성화됨</span>
             <h4>작동 시작 온도 (상한 임계값)</h4>
+            <p className="dev-logic-desc">
+              센서 측정값이 설정치를 초과하면 연동된 제어기(환풍기 등)가 자동으로 가동됩니다.
+            </p>
             <div className="dev-stepper">
-              <button type="button" onClick={() => setThreshold(t => t - 0.5)}>−</button>
+              <button type="button" onClick={() => setThreshold((t) => t - 0.5)}>−</button>
               <output>{threshold.toFixed(1)} °C</output>
-              <button type="button" onClick={() => setThreshold(t => t + 0.5)}>+</button>
+              <button type="button" onClick={() => setThreshold((t) => t + 0.5)}>+</button>
             </div>
           </div>
 
           <div className="dev-actions">
-            <button type="button" className="dev-cancel">취소</button>
-            <button type="button" className="dev-submit" onClick={handleSubmit}>등록하기</button>
+            <button type="button" className="dev-cancel" onClick={() => {
+              setSensorName("");
+              setControllerName("");
+              setSensor(null);
+              setController(null);
+            }}>
+              취소
+            </button>
+            <button type="button" className="dev-submit" onClick={handleSubmit}>
+              등록하기
+            </button>
           </div>
         </section>
 
+        {/* ── 오른쪽: 보유 장치 상태 + 상태 변경 ── */}
         <aside className="dev-side">
           <div className="dev-widget">
-            <div className="dev-widget-head"><Activity size={16} /> 실시간 현황</div>
-            <p>보유 센서 상태</p>
-            {[{ label: "온도", value: "24.5°C" }, { label: "습도", value: "65%" }].map((row) => (
-              <div key={row.label} className="dev-widget-item">
-                <span>{row.label} · <strong>{row.value}</strong></span>
+            <div className="dev-widget-head"><Activity size={16} /> 보유 장치 현황</div>
+            <p className="dev-widget-subtitle">보유 장치 상태</p>
+
+            {devices.length === 0 && (
+              <p className="dev-widget-empty">등록된 장치가 없습니다.</p>
+            )}
+
+            <div className="dev-device-list">
+              {devices.map((d) => (
+                <div
+                  key={d.uid}
+                  className={`dev-device-row ${selectedDeviceUid === d.uid ? "dev-device-row--selected" : ""}`}
+                  onClick={() => setSelectedDeviceUid(d.uid === selectedDeviceUid ? null : d.uid)}
+                >
+                  <span className="dev-device-icon">
+                    {d.deviceType === "SENSOR"
+                      ? sensorIcon(d.sensorType)
+                      : actuatorIcon(d.actuatorType)}
+                  </span>
+                  <div className="dev-device-info">
+                    <span className="dev-device-kind">
+                      {d.deviceType === "SENSOR"
+                        ? sensorLabel(d.sensorType)
+                        : actuatorLabel(d.actuatorType)}
+                    </span>
+                    <strong className="dev-device-name">{d.name}</strong>
+                  </div>
+                  <span className={`dev-dot ${statusDot(d.status)}`} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="dev-widget">
+            <div className="dev-widget-head"><Settings size={16} /> 상태 모드 제어</div>
+            <p className="dev-widget-subtitle">기기 상태 변경</p>
+
+            {selectedDevice ? (
+              <p className="dev-status-target">
+                선택: <strong>{selectedDevice.name}</strong>
+              </p>
+            ) : (
+              <p className="dev-status-target dev-status-target--none">
+                위 목록에서 장치를 선택하세요
+              </p>
+            )}
+
+            <div className="dev-status-btns">
+              <button
+                type="button"
+                className={`dev-status-btn dev-status-btn--active ${selectedDevice?.status === "ACTIVE" ? "dev-status-btn--current" : ""}`}
+                onClick={() => handleStatusChange("ACTIVE")}
+                disabled={!selectedDeviceUid}
+              >
                 <span className="dev-dot dev-dot--on" />
-              </div>
-            ))}
+                정상
+              </button>
+              <button
+                type="button"
+                className={`dev-status-btn dev-status-btn--inactive ${selectedDevice?.status === "INACTIVE" ? "dev-status-btn--current" : ""}`}
+                onClick={() => handleStatusChange("INACTIVE")}
+                disabled={!selectedDeviceUid}
+              >
+                <span className="dev-dot dev-dot--off" />
+                비활성
+              </button>
+              <button
+                type="button"
+                className={`dev-status-btn dev-status-btn--error ${selectedDevice?.status === "ERROR" ? "dev-status-btn--current" : ""}`}
+                onClick={() => handleStatusChange("ERROR")}
+                disabled={!selectedDeviceUid}
+              >
+                <span className="dev-dot dev-dot--err" />
+                오류
+              </button>
+            </div>
           </div>
         </aside>
       </div>

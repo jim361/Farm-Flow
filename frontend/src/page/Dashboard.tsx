@@ -66,21 +66,23 @@ const Dashboard = () => {
         gap: '16px',
         minHeight: '100%',
         padding: '4px',
+        fontFamily: 'Pretendard, "Segoe UI", system-ui, sans-serif',
       }}
     >
       <WeatherSection data={weatherData} isLoading={weatherLoading} onRefresh={refreshWeather} />
 
       <header
         style={{
-          background: 'radial-gradient(circle at top left, #e8f6d8, #d4e7c3 55%, #cde0be)',
-          border: '1px solid #c9dfb7',
-          borderRadius: '18px',
-          padding: '18px',
-          color: '#2a4a22',
+          backgroundColor: '#ffffff',
+          border: '1px solid #e7e9f1',
+          borderRadius: '14px',
+          padding: '14px 16px 12px',
+          color: '#1e2430',
+          boxShadow: '0 6px 16px rgba(24, 33, 53, 0.04)',
         }}
       >
-        <h1 style={{ margin: 0, fontSize: '26px', fontWeight: 800 }}>실시간 모니터링 대시보드</h1>
-        <p style={{ margin: '6px 0 0', color: '#46633e' }}>
+        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a' }}>실시간 모니터링</h1>
+        <p style={{ margin: '6px 0 0', maxWidth: '560px', fontSize: '0.92rem', lineHeight: 1.5, color: '#64748b' }}>
           센서 상태, 캘린더, 워크플로우 상태를 한 화면에서 확인합니다.
         </p>
       </header>
@@ -92,7 +94,7 @@ const Dashboard = () => {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '14px',
+          gap: '16px',
         }}
       >
         <CalendarTodoFrame

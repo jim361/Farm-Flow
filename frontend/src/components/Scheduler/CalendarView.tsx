@@ -32,18 +32,18 @@ const CalendarView = ({ selectedDate, visibleDate, eventsByDate, onSelectDate, o
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '8px', marginBottom: '8px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '9px', marginBottom: '9px' }}>
         {weekdayLabel.map((label) => (
-          <div key={label} style={{ textAlign: 'center', color: '#68756c', fontSize: '12px', fontWeight: 700 }}>
+          <div key={label} style={{ textAlign: 'center', color: '#8a8ea0', fontSize: '13px', fontWeight: 600 }}>
             {label}
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '8px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '9px' }}>
         {allCells.map((day, idx) => {
           if (day === 0) {
-            return <div key={`empty-${idx}`} style={{ height: '72px', borderRadius: '10px', backgroundColor: '#f7faf7' }} />;
+            return <div key={`empty-${idx}`} style={{ height: '104px', borderRadius: '12px', backgroundColor: '#f5f4fb' }} />;
           }
 
           const cellDate = toDateString(year, monthIndex, day);
@@ -57,21 +57,22 @@ const CalendarView = ({ selectedDate, visibleDate, eventsByDate, onSelectDate, o
               type="button"
               onClick={() => onSelectDate(cellDate)}
               style={{
-                height: '72px',
-                borderRadius: '10px',
-                border: isSelected ? '1px solid #2d6b43' : '1px solid #d7e3d8',
-                backgroundColor: isSelected ? '#e5f3e8' : '#ffffff',
+                height: '104px',
+                borderRadius: '12px',
+                border: isSelected ? '1px solid #004d26' : '1px solid #ececf2',
+                backgroundColor: isSelected ? '#004d26' : '#ffffff',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
-                padding: '8px',
+                padding: '10px',
+                boxShadow: isSelected ? '0 10px 16px rgba(0, 46, 24, 0.22)' : 'none',
               }}
             >
-              <span style={{ color: '#243628', fontWeight: 700, fontSize: '13px' }}>{day}</span>
+              <span style={{ color: isSelected ? '#ffffff' : '#222739', fontWeight: 700, fontSize: '15px' }}>{day}</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '100%' }}>
-                <span style={{ color: '#2f6b43', fontSize: '11px' }}>{count > 0 ? `${count}건` : ''}</span>
+                <span style={{ color: isSelected ? 'rgba(255,255,255,0.85)' : '#2f6b43', fontSize: '11px' }}>{count > 0 ? `${count}건` : ''}</span>
                 {events.slice(0, 2).map((event) => (
                   <button
                     key={event.id}
@@ -83,10 +84,10 @@ const CalendarView = ({ selectedDate, visibleDate, eventsByDate, onSelectDate, o
                     style={{
                       border: 'none',
                       borderRadius: '999px',
-                      backgroundColor: '#dff1e3',
-                      color: '#275138',
-                      fontSize: '10px',
-                      padding: '2px 6px',
+                      backgroundColor: isSelected ? 'rgba(186, 243, 203, 0.25)' : '#dff1e3',
+                      color: isSelected ? '#e8ffee' : '#275138',
+                      fontSize: '11px',
+                      padding: '3px 8px',
                       textAlign: 'left',
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
