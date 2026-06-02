@@ -81,6 +81,75 @@ function Test-ProcessCommand {
     return [bool](Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match $escaped })
 }
 
+function Test-DnsName {
+    param(
+        [string]$Name,
+        [string]$Type = "A"
+    )
+
+    try {
+        Resolve-DnsName -Name $Name -Type $Type -ErrorAction Stop | Out-Null
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+function Wait-CloudflareTunnelNetwork {
+    param([int]$TimeoutSeconds = 180)
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $tunnelDnsReady = Test-DnsName -Name "_v2-origintunneld._tcp.argotunnel.com" -Type "SRV"
+        $apiDnsReady = Test-DnsName -Name "api.cloudflare.com" -Type "A"
+
+        if ($tunnelDnsReady -and $apiDnsReady) {
+            Write-Step "Cloudflare DNS is ready."
+            return $true
+        }
+
+        Write-Step "Waiting for Cloudflare DNS/network readiness."
+        Start-Sleep -Seconds 5
+    }
+
+    Write-Step "Warning: Cloudflare DNS/network did not become ready in time."
+    return $false
+}
+
+function Start-CloudflaredTunnel {
+    param(
+        [string]$CloudflaredExe,
+        [string]$CloudflaredConfig,
+        [string]$Root,
+        [string]$LogDir
+    )
+
+    Wait-CloudflareTunnelNetwork | Out-Null
+
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        Write-Step "Starting Cloudflare tunnel. Attempt $attempt/3."
+        Start-Process `
+            -FilePath $CloudflaredExe `
+            -ArgumentList "tunnel", "--config", $CloudflaredConfig, "run", "farmflow" `
+            -WorkingDirectory $Root `
+            -RedirectStandardOutput (Join-Path $LogDir "cloudflared.out.log") `
+            -RedirectStandardError (Join-Path $LogDir "cloudflared.err.log") `
+            -WindowStyle Hidden | Out-Null
+
+        Start-Sleep -Seconds 12
+        if (Test-ProcessCommand $CloudflaredConfig) {
+            Write-Step "Cloudflare tunnel is running."
+            return $true
+        }
+
+        Write-Step "Warning: Cloudflare tunnel stopped after start attempt $attempt."
+        Start-Sleep -Seconds 8
+    }
+
+    Write-Step "Warning: Cloudflare tunnel could not be kept running."
+    return $false
+}
+
 Write-Step "FarmFlow startup begin: $Root"
 
 $DockerExe = Get-CommandPath "docker" @("C:\Program Files\Docker\Docker\resources\bin\docker.exe")
@@ -181,14 +250,11 @@ if (Test-Port -HostName "127.0.0.1" -Port 8787) {
 if (Test-ProcessCommand $CloudflaredConfig) {
     Write-Step "Cloudflared tunnel already running."
 } else {
-    Write-Step "Starting Cloudflare tunnel."
-    Start-Process `
-        -FilePath $CloudflaredExe `
-        -ArgumentList "tunnel", "--config", $CloudflaredConfig, "run", "farmflow" `
-        -WorkingDirectory $Root `
-        -RedirectStandardOutput (Join-Path $LogDir "cloudflared.out.log") `
-        -RedirectStandardError (Join-Path $LogDir "cloudflared.err.log") `
-        -WindowStyle Hidden | Out-Null
+    Start-CloudflaredTunnel `
+        -CloudflaredExe $CloudflaredExe `
+        -CloudflaredConfig $CloudflaredConfig `
+        -Root $Root `
+        -LogDir $LogDir | Out-Null
 }
 
 try {
