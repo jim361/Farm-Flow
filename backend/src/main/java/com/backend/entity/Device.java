@@ -15,7 +15,7 @@ public class Device {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(nullable = false, length = 40)
     private String uid;
 
     // greenhouse_id FK — 실제 하우스 엔티티가 없으므로 Long으로 관리

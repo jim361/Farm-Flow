@@ -5,14 +5,15 @@ type DeploymentSafetyModalProps = {
   open: boolean;
   onClose: () => void;
   onConfirmDeploy?: (name: string) => void;
+  initialName?: string;
 };
 
-export function DeploymentSafetyModal({ open, onClose, onConfirmDeploy }: DeploymentSafetyModalProps) {
+export function DeploymentSafetyModal({ open, onClose, onConfirmDeploy, initialName = "" }: DeploymentSafetyModalProps) {
   const [workflowName, setWorkflowName] = useState("");
 
   useEffect(() => {
-    if (open) setWorkflowName("");
-  }, [open]);
+    if (open) setWorkflowName(initialName);
+  }, [open, initialName]);
 
   const handleClose = useCallback(() => {
     onClose();
@@ -31,8 +32,8 @@ export function DeploymentSafetyModal({ open, onClose, onConfirmDeploy }: Deploy
       <div className="dsm-panel">
         <div className="dsm-header">
           <div className="dsm-header-text">
-            <h2 id="dsm-title">이름 등록</h2>
-            <p>워크플로우 이름을 입력한 뒤 저장하면 템플릿 페이지로 이동합니다.</p>
+            <h2 id="dsm-title">워크플로우 저장</h2>
+            <p>이름을 입력하면 현재 로직을 저장하고 바로 활성화합니다.</p>
           </div>
           <div className="dsm-shield" aria-hidden>
             <Shield size={36} strokeWidth={1.75} />
@@ -46,7 +47,7 @@ export function DeploymentSafetyModal({ open, onClose, onConfirmDeploy }: Deploy
           <input
             id="workflow-name"
             className="dsm-input"
-            placeholder="예) 온실 A 구역 여름 환기"
+            placeholder="예: A동 고온 스프링클러 제어"
             value={workflowName}
             onChange={(e) => setWorkflowName(e.target.value)}
           />
@@ -65,7 +66,7 @@ export function DeploymentSafetyModal({ open, onClose, onConfirmDeploy }: Deploy
             }}
             disabled={!workflowName.trim()}
           >
-            저장하기
+            저장 및 적용
           </button>
         </div>
       </div>

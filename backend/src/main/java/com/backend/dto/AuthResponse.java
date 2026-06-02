@@ -22,6 +22,9 @@ public class AuthResponse {
     @Schema(description = "이름", example = "홍길동")
     private String name;
 
+    @Schema(description = "계정에 할당된 온실 UID", example = "GH-1A2B3C")
+    private String greenhouseUid;
+
     @Schema(description = "역할", example = "USER")
     private String role;
 }

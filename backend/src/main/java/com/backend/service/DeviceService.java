@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,15 +20,70 @@ public class DeviceService {
 
     private final DeviceRepository deviceRepository;
 
-    /**
-     * FR-DEV-001: 기기 등록
-     * URL: POST /greenhouses/{greenhouseUid}/devices
-     * mqtt_topic 자동 생성: kr/{farmUid}/{greenhouseUid}/{deviceType}/{deviceUid}
-     * farmUid는 현재 greenhouses 엔티티 미구현으로 "FARM-XXX" 플레이스홀더 사용.
-     * Greenhouse 엔티티 구현 후 조회로 교체하세요.
-     */
     @Transactional
     public DeviceResponse createDevice(String greenhouseUid, DeviceRequest request) {
+        validateRequest(request);
+
+        String requestedUid = request.getUid() == null ? null : request.getUid().trim();
+        if (requestedUid != null && !requestedUid.isBlank()) {
+            return findByUidAndGreenhouse(requestedUid, greenhouseUid)
+                    .map(device -> updateExistingDevice(device, greenhouseUid, request, requestedUid))
+                    .orElseGet(() -> createNewDevice(greenhouseUid, request, requestedUid));
+        }
+
+        String uid;
+        do {
+            uid = IdGenerator.generateDeviceUid();
+        } while (!deviceRepository.findAllByUid(uid).isEmpty());
+
+        return createNewDevice(greenhouseUid, request, uid);
+    }
+
+    public List<DeviceResponse> getDevicesByGreenhouse(String greenhouseUid) {
+        String topicMarker = greenhouseTopicMarker(greenhouseUid);
+        return deviceRepository.findAll()
+                .stream()
+                .filter(device -> device.getMqttTopic() != null && device.getMqttTopic().contains(topicMarker))
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public DeviceResponse updateStatus(String greenhouseUid, String deviceUid, String status) {
+        if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status) && !"ERROR".equals(status)) {
+            throw new IllegalStateException("status는 ACTIVE / INACTIVE / ERROR만 허용됩니다.");
+        }
+        Device device = findByUidAndOptionalGreenhouse(deviceUid, greenhouseUid)
+                .orElseThrow(() -> new IllegalArgumentException("장치를 찾을 수 없습니다. UID: " + deviceUid));
+        device.setStatus(status);
+        return toResponse(device);
+    }
+
+    @Transactional
+    public void deleteDevice(String greenhouseUid, String deviceUid) {
+        Device device = findByUidAndOptionalGreenhouse(deviceUid, greenhouseUid)
+                .orElseThrow(() -> new IllegalArgumentException("장치를 찾을 수 없습니다. UID: " + deviceUid));
+        deviceRepository.delete(device);
+    }
+
+    public List<DeviceResponse> getAllDevices() {
+        return deviceRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<DeviceResponse> getDevicesByDeviceType(String deviceType) {
+        if (!"SENSOR".equals(deviceType) && !"ACTUATOR".equals(deviceType)) {
+            throw new IllegalStateException("deviceType은 SENSOR 또는 ACTUATOR만 허용됩니다.");
+        }
+        return deviceRepository.findByDeviceType(deviceType)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    private void validateRequest(DeviceRequest request) {
         if (request.getDeviceType() == null || request.getDeviceType().isBlank()) {
             throw new IllegalStateException("deviceType은 필수입니다.");
         }
@@ -37,14 +93,13 @@ public class DeviceService {
         if (!"SENSOR".equals(request.getDeviceType()) && !"ACTUATOR".equals(request.getDeviceType())) {
             throw new IllegalStateException("deviceType은 SENSOR 또는 ACTUATOR만 허용됩니다.");
         }
+    }
 
-        // UID 중복 시 재시도
-        String uid;
-        do {
-            uid = IdGenerator.generateDeviceUid();
-        } while (deviceRepository.findByUid(uid).isPresent());
-
-        String mqttTopic = buildMqttTopic(greenhouseUid, request.getDeviceType(), uid);
+    private DeviceResponse createNewDevice(String greenhouseUid, DeviceRequest request, String uid) {
+        String requestedTopic = request.getMqttTopic() == null ? null : request.getMqttTopic().trim();
+        String mqttTopic = requestedTopic == null || requestedTopic.isBlank()
+                ? buildMqttTopic(greenhouseUid, request.getDeviceType(), uid)
+                : requestedTopic;
 
         Device device = Device.builder()
                 .uid(uid)
@@ -59,66 +114,43 @@ public class DeviceService {
         return toResponse(deviceRepository.save(device));
     }
 
-    /** FR-DEV-002: 하우스별 기기 목록 조회 */
-    public List<DeviceResponse> getDevicesByGreenhouse(String greenhouseUid) {
-        // greenhouseUid로 greenhouseId 조회가 필요하나,
-        // Greenhouse 엔티티 미구현으로 임시 전체 반환.
-        // Greenhouse 구현 후 findByGreenhouseId() 로 교체하세요.
-        return deviceRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    private DeviceResponse updateExistingDevice(Device device, String greenhouseUid, DeviceRequest request, String uid) {
+        String requestedTopic = request.getMqttTopic() == null ? null : request.getMqttTopic().trim();
+        String mqttTopic = requestedTopic == null || requestedTopic.isBlank()
+                ? buildMqttTopic(greenhouseUid, request.getDeviceType(), uid)
+                : requestedTopic;
+
+        device.setName(request.getName());
+        device.setDeviceType(request.getDeviceType());
+        device.setSensorType(request.getSensorType());
+        device.setActuatorType(request.getActuatorType());
+        device.setMqttTopic(mqttTopic);
+        device.setStatus("ACTIVE");
+        return toResponse(device);
     }
 
-    /** FR-DEV-002: 기기 상태 변경 */
-    @Transactional
-    public DeviceResponse updateStatus(String deviceUid, String status) {
-        if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status) && !"ERROR".equals(status)) {
-            throw new IllegalStateException("status는 ACTIVE / INACTIVE / ERROR만 허용됩니다.");
+    private Optional<Device> findByUidAndGreenhouse(String uid, String greenhouseUid) {
+        String topicMarker = greenhouseTopicMarker(greenhouseUid);
+        return deviceRepository.findAllByUid(uid)
+                .stream()
+                .filter(device -> device.getMqttTopic() != null && device.getMqttTopic().contains(topicMarker))
+                .findFirst();
+    }
+
+    private Optional<Device> findByUidAndOptionalGreenhouse(String uid, String greenhouseUid) {
+        if (greenhouseUid == null || greenhouseUid.isBlank()) {
+            return deviceRepository.findAllByUid(uid).stream().findFirst();
         }
-        Device device = deviceRepository.findByUid(deviceUid)
-                .orElseThrow(() -> new IllegalArgumentException("장치를 찾을 수 없습니다. UID: " + deviceUid));
-        device.setStatus(status);
-        return toResponse(device); // 더티체킹으로 저장
+        return findByUidAndGreenhouse(uid, greenhouseUid);
     }
 
-    /** 기기 삭제 */
-    @Transactional
-    public void deleteDevice(String deviceUid) {
-        Device device = deviceRepository.findByUid(deviceUid)
-                .orElseThrow(() -> new IllegalArgumentException("장치를 찾을 수 없습니다. UID: " + deviceUid));
-        deviceRepository.delete(device);
+    private String greenhouseTopicMarker(String greenhouseUid) {
+        return "/greenhouses/" + greenhouseUid + "/";
     }
 
-    /** 로직 빌더 전체 목록 (deviceType 필터 없이) */
-    public List<DeviceResponse> getAllDevices() {
-        return deviceRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    /** 로직 빌더 타입 필터 */
-    public List<DeviceResponse> getDevicesByDeviceType(String deviceType) {
-        if (!"SENSOR".equals(deviceType) && !"ACTUATOR".equals(deviceType)) {
-            throw new IllegalStateException("deviceType은 SENSOR 또는 ACTUATOR만 허용됩니다.");
-        }
-        return deviceRepository.findByDeviceType(deviceType)
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    // ── 내부 유틸 ─────────────────────────────────────────────────────────────
-
-    /**
-     * MQTT 토픽 자동 생성
-     * 형식: kr/{farmUid}/{greenhouseUid}/{sensor|actuator}/{deviceUid}
-     */
     private String buildMqttTopic(String greenhouseUid, String deviceType, String deviceUid) {
-        String typeSegment = "SENSOR".equals(deviceType) ? "sensor" : "actuator";
-        // farmUid는 Greenhouse 엔티티 조회로 대체 필요 (현재 플레이스홀더)
-        return "kr/FARM-XXX/" + greenhouseUid + "/" + typeSegment + "/" + deviceUid;
+        String suffix = "SENSOR".equals(deviceType) ? "telemetry" : "command";
+        return "farmflow/greenhouses/" + greenhouseUid + "/devices/" + deviceUid + "/" + suffix;
     }
 
     private DeviceResponse toResponse(Device device) {

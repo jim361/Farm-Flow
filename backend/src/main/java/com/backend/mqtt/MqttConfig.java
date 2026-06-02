@@ -50,7 +50,7 @@ public class MqttConfig {
             MqttPahoClientFactory factory) {
         MqttPahoMessageDrivenChannelAdapter adapter =
             new MqttPahoMessageDrivenChannelAdapter(
-                clientId + "-inbound", factory, sensorTopic);
+                clientId + "-inbound", factory, sensorTopic.split(","));
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
         adapter.setQos(1);

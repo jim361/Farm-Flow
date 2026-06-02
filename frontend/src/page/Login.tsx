@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
-import { loginApi, setToken } from "../api/api";
+import { loginApi, setActiveGreenhouseUid, setToken } from "../api/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -25,6 +25,7 @@ export default function Login() {
       const data = await loginApi(email, password);
       // 토큰 저장 후 즉시 대시보드 이동
       setToken(data.token);
+      setActiveGreenhouseUid(data.greenhouseUid);
       window.location.href = "/dashboard";
     } catch (err: any) {
       setError(err.message || "이메일 또는 비밀번호가 일치하지 않습니다.");

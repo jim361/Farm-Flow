@@ -1,5 +1,5 @@
 // src/page/Dashboard.tsx
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WeatherSection from '../components/Dashboard/WeatherSection';
 import MetricsSection from '../components/Dashboard/MetricsSection';
@@ -8,6 +8,7 @@ import WorkflowSection from '../components/Dashboard/WorkflowSection';
 import EventModal from '../components/Scheduler/EventModal';
 import { useSchedulerLogic } from '../components/Scheduler/useSchedulerLogic';
 import { metricsNow, weatherNow } from '../components/Dashboard/mockDashboardDb';
+import { fetchDashboardMetricsApi, getActiveGreenhouseUid, getMeApi, setActiveGreenhouseUid } from '../api/api';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -34,6 +35,9 @@ const Dashboard = () => {
   const [metricData, setMetricData] = useState(metricsNow);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [metricsLoading, setMetricsLoading] = useState(false);
+  const [lastMetricUpdatedAt, setLastMetricUpdatedAt] = useState<string>('');
+  const [metricsLive, setMetricsLive] = useState(true);
+  const [greenhouseUid, setGreenhouseUid] = useState(getActiveGreenhouseUid());
 
   const selectedEvent = useMemo(() => {
     if (!selectedEventId) {
@@ -50,13 +54,41 @@ const Dashboard = () => {
     setWeatherLoading(false);
   };
 
-  // 한글 주석: 온도/습도/CO2/조도를 한 번에 갱신하는 Mock 함수입니다.
-  const refreshAllMetrics = async () => {
+  const refreshAllMetrics = async (targetGreenhouseUid = greenhouseUid) => {
     setMetricsLoading(true);
-    await delay(900);
-    setMetricData(randomizeMetrics());
-    setMetricsLoading(false);
+    try {
+      setMetricData(await fetchDashboardMetricsApi(targetGreenhouseUid.trim()));
+      setMetricsLive(true);
+      setLastMetricUpdatedAt(new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    } catch {
+      setMetricData(randomizeMetrics());
+      setMetricsLive(false);
+      setLastMetricUpdatedAt(new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    } finally {
+      setMetricsLoading(false);
+    }
   };
+
+  useEffect(() => {
+    getMeApi()
+      .then((user) => {
+        if (user.greenhouseUid) {
+          setGreenhouseUid(user.greenhouseUid);
+          setActiveGreenhouseUid(user.greenhouseUid);
+        }
+      })
+      .catch(() => {
+        // The route guard will handle expired sessions.
+      });
+  }, []);
+
+  useEffect(() => {
+    const normalizedGreenhouseUid = greenhouseUid.trim();
+    setActiveGreenhouseUid(normalizedGreenhouseUid);
+    refreshAllMetrics(normalizedGreenhouseUid);
+    const timer = window.setInterval(() => refreshAllMetrics(normalizedGreenhouseUid), 3000);
+    return () => window.clearInterval(timer);
+  }, [greenhouseUid]);
 
   return (
     <div
@@ -85,10 +117,55 @@ const Dashboard = () => {
         <p style={{ margin: '6px 0 0', maxWidth: '560px', fontSize: '0.92rem', lineHeight: 1.5, color: '#64748b' }}>
           센서 상태, 캘린더, 워크플로우 상태를 한 화면에서 확인합니다.
         </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+          <label htmlFor="greenhouseUid" style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
+            내 온실 UID
+          </label>
+          <input
+            id="greenhouseUid"
+            value={greenhouseUid}
+            placeholder="계정 온실 UID"
+            onChange={(event) => setGreenhouseUid(event.target.value)}
+            style={{
+              width: '150px',
+              height: '32px',
+              border: '1px solid #cbd5e1',
+              borderRadius: '8px',
+              padding: '0 10px',
+              fontSize: '13px',
+              color: '#0f172a',
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => navigator.clipboard?.writeText(greenhouseUid.trim())}
+            disabled={!greenhouseUid.trim()}
+            style={{
+              height: '32px',
+              border: '1px solid #cbd5e1',
+              borderRadius: '8px',
+              padding: '0 10px',
+              background: '#f8fafc',
+              color: '#334155',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: greenhouseUid.trim() ? 'pointer' : 'not-allowed',
+            }}
+          >
+            복사
+          </button>
+        </div>
       </header>
 
       {/* <h2 style={{ margin: '4px 0 0', color: '#2f5124' }}>환경 지표</h2> */}
-      <MetricsSection data={metricData} isLoading={metricsLoading} onRefreshAll={refreshAllMetrics} />
+      <MetricsSection
+        data={metricData}
+        isLoading={metricsLoading}
+        onRefreshAll={refreshAllMetrics}
+        lastUpdatedAt={lastMetricUpdatedAt}
+        isLive={metricsLive}
+        sourceLabel={greenhouseUid.trim() ? `Redis dashboard:metrics:${greenhouseUid.trim()}` : '온실 UID 미설정'}
+      />
 
       <div
         style={{

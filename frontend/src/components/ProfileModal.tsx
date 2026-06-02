@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, User, LogOut, X, CheckCircle2, Mail } from "lucide-react";
-import { logoutApi, getMeApi, getToken } from "../api/api";
+import { Copy, Lock, User, LogOut, X, CheckCircle2, Mail } from "lucide-react";
+import { API_BASE_URL, authFetch, logoutApi, getMeApi } from "../api/api";
 
 type ProfileModalProps = {
   isOpen: boolean;
@@ -15,6 +15,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     uid: string;
     name: string;
     email: string;
+    greenhouseUid: string;
     role: string;
   } | null>(null);
 
@@ -47,13 +48,8 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       return;
     }
     try {
-      const token = getToken();
-      const res = await fetch("http://localhost:8080/api/v1/auth/verify-password", {
+      const res = await authFetch(`${API_BASE_URL}/auth/verify-password`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
         body: JSON.stringify({ password: currentPassword }),
       });
       if (res.ok) {
@@ -87,13 +83,8 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     }
 
     try {
-      const token = getToken();
-      const res = await fetch("http://localhost:8080/api/v1/auth/change-password", {
+      const res = await authFetch(`${API_BASE_URL}/auth/change-password`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
         body: JSON.stringify({
           currentPassword: currentPassword,
           newPassword: newPassword,
@@ -162,6 +153,27 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           <div className="ff-form-group">
             <label><User size={14} /> 이름</label>
             <input type="text" value={userInfo?.name || "로딩 중..."} disabled className="ff-input-disabled" />
+          </div>
+
+          <div className="ff-form-group">
+            <label><Copy size={14} /> 내 온실 UID</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input type="text" value={userInfo?.greenhouseUid || "로딩 중..."} disabled className="ff-input-disabled" />
+              <button
+                type="button"
+                onClick={() => userInfo?.greenhouseUid && navigator.clipboard?.writeText(userInfo.greenhouseUid)}
+                style={{
+                  padding: "8px 12px",
+                  background: "#f8fafc",
+                  color: "#334155",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 8,
+                  fontWeight: 700,
+                }}
+              >
+                복사
+              </button>
+            </div>
           </div>
 
           <div className="ff-form-group">

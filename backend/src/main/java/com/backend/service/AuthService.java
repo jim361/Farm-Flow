@@ -42,11 +42,14 @@ public class AuthService {
             uid = IdGenerator.generateUserUid();
         } while (userRepository.findByUid(uid).isPresent());
 
+        String greenhouseUid = generateUniqueGreenhouseUid();
+
         User user = User.builder()
                 .uid(uid)
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
+                .greenhouseUid(greenhouseUid)
                 .role("USER")
                 .build();
 
@@ -59,11 +62,12 @@ public class AuthService {
                 .token(token)
                 .uid(uid)
                 .name(user.getName())
+                .greenhouseUid(user.getGreenhouseUid())
                 .role(user.getRole())
                 .build();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         if (request.getEmail() == null || request.getEmail().isBlank()) {
             throw new IllegalStateException("이메일은 필수입니다.");
@@ -86,6 +90,7 @@ public class AuthService {
                 .token(token)
                 .uid(user.getUid())
                 .name(user.getName())
+                .greenhouseUid(ensureGreenhouseUid(user))
                 .role(user.getRole())
                 .build();
     }
@@ -101,16 +106,17 @@ public class AuthService {
                 .uid(user.getUid())
                 .name(user.getName())
                 .email(user.getEmail())
+                .greenhouseUid(user.getGreenhouseUid())
                 .role(user.getRole())
                 .build();
     }
 
     @Transactional(readOnly = true)
-    public Map<String, String> findIdByEmail(String email) {
-        if (email == null || email.isBlank()) {
-            throw new IllegalStateException("이메일은 필수입니다.");
+    public Map<String, String> findIdByName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalStateException("이름은 필수입니다.");
         }
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findFirstByNameIgnoreCase(name.trim())
                 .orElseThrow(() -> new IllegalArgumentException("일치하는 계정을 찾을 수 없습니다."));
         return Map.of("email", user.getEmail(), "name", user.getName());
     }
@@ -169,5 +175,22 @@ public class AuthService {
     private void saveSession(String uid, String token) {
         redisTemplate.opsForValue().set(
                 "session:" + uid, token, Duration.ofHours(24));
+    }
+
+    private String ensureGreenhouseUid(User user) {
+        if (user.getGreenhouseUid() != null && !user.getGreenhouseUid().isBlank()) {
+            return user.getGreenhouseUid();
+        }
+        String greenhouseUid = generateUniqueGreenhouseUid();
+        user.setGreenhouseUid(greenhouseUid);
+        return greenhouseUid;
+    }
+
+    private String generateUniqueGreenhouseUid() {
+        String greenhouseUid;
+        do {
+            greenhouseUid = IdGenerator.generateGreenhouseUid();
+        } while (userRepository.existsByGreenhouseUid(greenhouseUid));
+        return greenhouseUid;
     }
 }

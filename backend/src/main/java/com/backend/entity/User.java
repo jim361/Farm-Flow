@@ -31,6 +31,9 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(name = "greenhouse_uid", unique = true, nullable = false, length = 20)
+    private String greenhouseUid;
+
     @Column(length = 20)
     @Builder.Default
     private String role = "USER";

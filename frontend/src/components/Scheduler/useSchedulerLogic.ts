@@ -1,9 +1,7 @@
-// 역할: Dashboard와 Schedular가 함께 사용하는 전역 일정 상태 및 액션 훅입니다.
-
-import { useMemo, useSyncExternalStore } from 'react';
-import { getStoredScheduleEvents, saveScheduleEvents } from './SchedulerData';
-import { formatDateString } from './schedulerDateUtils';
-import type { EventEditPayload, ScheduleEventItem } from './types';
+import { useMemo, useSyncExternalStore } from "react";
+import { getStoredScheduleEvents, saveScheduleEvents } from "./SchedulerData";
+import { formatDateString } from "./schedulerDateUtils";
+import type { EventEditPayload, ScheduleEventItem } from "./types";
 
 interface SchedulerSnapshot {
   events: ScheduleEventItem[];
@@ -13,9 +11,10 @@ interface SchedulerSnapshot {
 interface CreatePayload {
   title: string;
   date: string;
+  endDate: string;
   startTime: string;
   endTime: string;
-  category: ScheduleEventItem['category'];
+  category: ScheduleEventItem["category"];
   note?: string;
 }
 
@@ -25,7 +24,6 @@ let snapshot: SchedulerSnapshot = {
 };
 
 const listeners = new Set<() => void>();
-
 const emit = () => listeners.forEach((listener) => listener());
 
 const setSnapshot = (next: SchedulerSnapshot) => {
@@ -46,20 +44,39 @@ export const useSchedulerLogic = () => {
 
   const todayDate = formatDateString(new Date());
 
+  const isDateInEventRange = (date: string, event: ScheduleEventItem) => {
+    const endDate = event.endDate || event.date;
+    return event.date <= date && date <= endDate;
+  };
+
+  const datesInEventRange = (event: ScheduleEventItem) => {
+    const dates: string[] = [];
+    const endDate = event.endDate || event.date;
+    const current = new Date(`${event.date}T00:00:00`);
+    const end = new Date(`${endDate}T00:00:00`);
+
+    while (current <= end) {
+      dates.push(formatDateString(current));
+      current.setDate(current.getDate() + 1);
+    }
+
+    return dates;
+  };
+
   const eventsByDate = useMemo(() => {
     return state.events.reduce<Record<string, ScheduleEventItem[]>>((acc, event) => {
-      if (!acc[event.date]) {
-        acc[event.date] = [];
-      }
-      acc[event.date].push(event);
+      datesInEventRange(event).forEach((date) => {
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(event);
+        acc[date].sort((a, b) => a.startTime.localeCompare(b.startTime));
+      });
       return acc;
     }, {});
   }, [state.events]);
 
   const todayEvents = useMemo(() => {
-    // 한글 주석: 오늘 날짜(new Date)와 일치하는 데이터만 To-do와 타임라인에 노출합니다.
     return state.events
-      .filter((event) => event.date === todayDate)
+      .filter((event) => isDateInEventRange(todayDate, event))
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [state.events, todayDate]);
 

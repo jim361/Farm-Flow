@@ -22,6 +22,9 @@ public class UserResponse {
     @Schema(description = "이메일", example = "user@farm.com")
     private String email;
 
+    @Schema(description = "계정에 할당된 온실 UID", example = "GH-1A2B3C")
+    private String greenhouseUid;
+
     @Schema(description = "역할", example = "USER")
     private String role;
 }

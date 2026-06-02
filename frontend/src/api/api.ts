@@ -1,19 +1,21 @@
 import type { SavedUserWorkflow } from "../workflowTypes";
 
-// 백엔드 엔티티 구조와 일치하는 타입 정의
 export type LibraryDevice = {
   id: string;
   name: string;
   deviceType: "SENSOR" | "ACTUATOR";
   subtype?: string;
+  sensorType?: string | null;
+  actuatorType?: string | null;
+  mqttTopic?: string | null;
+  status?: string | null;
 };
-
-// ─── 인증 관련 타입 ───
 
 export type AuthResponse = {
   token: string;
   uid: string;
   name: string;
+  greenhouseUid: string;
   role: string;
 };
 
@@ -21,10 +23,9 @@ export type UserResponse = {
   uid: string;
   name: string;
   email: string;
+  greenhouseUid: string;
   role: string;
 };
-
-// ─── 템플릿 관련 타입 ───
 
 export type TemplateItem = {
   id: string;
@@ -38,9 +39,51 @@ export type TemplateItem = {
   downloadCnt: number;
 };
 
-const BASE_URL = "http://localhost:8080/api/v1";
+export type DashboardMetric = {
+  id: string;
+  label: string;
+  unit: string;
+  value: number;
+  trend: number;
+  state: "stable" | "warning";
+};
 
-// ─── JWT 토큰 관리 ───
+export type DashboardAlert = {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  source: string;
+  deviceUid: string;
+  command: "ON" | "OFF" | string;
+  topic: string;
+};
+
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080/api/v1").replace(/\/$/, "");
+const BASE_URL = API_BASE_URL;
+export const DEFAULT_GREENHOUSE_UID = "";
+const GREENHOUSE_STORAGE_KEY = "farmflow.greenhouseUid";
+
+export function getActiveGreenhouseUid(): string {
+  return localStorage.getItem(GREENHOUSE_STORAGE_KEY) || DEFAULT_GREENHOUSE_UID;
+}
+
+export function setActiveGreenhouseUid(greenhouseUid: string): void {
+  const normalized = greenhouseUid.trim();
+  if (normalized) {
+    localStorage.setItem(GREENHOUSE_STORAGE_KEY, normalized);
+  } else {
+    localStorage.removeItem(GREENHOUSE_STORAGE_KEY);
+  }
+}
+
+export function requireActiveGreenhouseUid(): string {
+  const greenhouseUid = getActiveGreenhouseUid();
+  if (!greenhouseUid) {
+    throw new Error("온실 UID를 먼저 확인해주세요.");
+  }
+  return greenhouseUid;
+}
 
 export function getToken(): string | null {
   return localStorage.getItem("token");
@@ -52,32 +95,22 @@ export function setToken(token: string): void {
 
 export function clearToken(): void {
   localStorage.removeItem("token");
+  localStorage.removeItem(GREENHOUSE_STORAGE_KEY);
 }
 
-/** 인증 헤더가 포함된 fetch wrapper — 모든 보호 API에서 사용 */
-async function authFetch(
-  url: string,
-  options: RequestInit = {}
-): Promise<Response> {
+export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const token = getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) || {}),
   };
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
   return fetch(url, { ...options, headers });
 }
 
-// ─── 인증(Auth) API ───
-
-/** FR-AUTH-001: 회원가입 — JWT 즉시 발급 */
-export async function signupApi(
-  email: string,
-  password: string,
-  name: string
-): Promise<AuthResponse> {
+export async function signupApi(email: string, password: string, name: string): Promise<AuthResponse> {
   const res = await fetch(`${BASE_URL}/auth/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -90,11 +123,7 @@ export async function signupApi(
   return res.json();
 }
 
-/** FR-AUTH-002: 로그인 — JWT 발급 + Redis session 저장 */
-export async function loginApi(
-  email: string,
-  password: string
-): Promise<AuthResponse> {
+export async function loginApi(email: string, password: string): Promise<AuthResponse> {
   const res = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -102,24 +131,19 @@ export async function loginApi(
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "로그인 실패" }));
-    throw new Error(
-      err.error || "아이디 또는 비밀번호가 일치하지 않습니다."
-    );
+    throw new Error(err.error || "아이디 또는 비밀번호가 일치하지 않습니다.");
   }
   return res.json();
 }
 
-/** FR-AUTH-003: 로그아웃 — Redis session 삭제 + 로컬 토큰 제거 */
 export async function logoutApi(): Promise<void> {
   try {
     await authFetch(`${BASE_URL}/auth/logout`, { method: "POST" });
-  } catch {
-    // 네트워크 오류여도 로컬 토큰은 반드시 삭제
+  } finally {
+    clearToken();
   }
-  clearToken();
 }
 
-/** FR-AUTH-004: 내 정보 조회 — 토큰 유효성 검증 겸용 */
 export async function getMeApi(): Promise<UserResponse> {
   const res = await authFetch(`${BASE_URL}/auth/me`);
   if (!res.ok) {
@@ -128,29 +152,27 @@ export async function getMeApi(): Promise<UserResponse> {
   return res.json();
 }
 
-// ─── 장치(Device) API ───
-
-/** 백엔드 DB에서 장치 목록을 가져오는 함수 */
 export async function fetchDevicesApi(): Promise<LibraryDevice[]> {
-  const response = await authFetch(`${BASE_URL}/devices`);
+  const greenhouseUid = requireActiveGreenhouseUid();
+  const response = await authFetch(`${BASE_URL}/greenhouses/${encodeURIComponent(greenhouseUid)}/devices`);
   if (!response.ok) throw new Error("장치 데이터를 불러올 수 없습니다.");
 
   const data = await response.json();
-  console.log("Fetched Devices from DB:", data);
-
   return data.map((d: any) => ({
     id: d.uid || d.id?.toString(),
     name: d.name,
     deviceType: d.deviceType || d.device_type,
     subtype: d.sensorType || d.actuatorType || d.sensor_type,
+    sensorType: d.sensorType || d.sensor_type || null,
+    actuatorType: d.actuatorType || d.actuator_type || null,
+    mqttTopic: d.mqttTopic || d.mqtt_topic || null,
+    status: d.status || null,
   }));
 }
 
-/** 장치 등록 */
-export async function registerDeviceApi(
-  deviceData: Record<string, unknown>
-): Promise<any> {
-  const res = await authFetch(`${BASE_URL}/greenhouses/GH-001/devices`, {
+export async function registerDeviceApi(deviceData: Record<string, unknown>): Promise<any> {
+  const greenhouseUid = requireActiveGreenhouseUid();
+  const res = await authFetch(`${BASE_URL}/greenhouses/${encodeURIComponent(greenhouseUid)}/devices`, {
     method: "POST",
     body: JSON.stringify(deviceData),
   });
@@ -161,21 +183,20 @@ export async function registerDeviceApi(
   return res.json();
 }
 
-/** 장치 삭제 (여러 개 동시) */
 export async function deleteDevicesApi(ids: string[]): Promise<void> {
+  const greenhouseUid = requireActiveGreenhouseUid();
   await Promise.all(
     ids.map((id) =>
-      authFetch(`${BASE_URL}/devices/${id}`, { method: "DELETE" })
+      authFetch(`${BASE_URL}/greenhouses/${encodeURIComponent(greenhouseUid)}/devices/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      })
     )
   );
 }
 
-/** 장치 상태 변경 */
-export async function updateDeviceStatusApi(
-  deviceUid: string,
-  status: string
-): Promise<any> {
-  const res = await authFetch(`${BASE_URL}/devices/${deviceUid}/status`, {
+export async function updateDeviceStatusApi(deviceUid: string, status: string): Promise<any> {
+  const greenhouseUid = requireActiveGreenhouseUid();
+  const res = await authFetch(`${BASE_URL}/greenhouses/${encodeURIComponent(greenhouseUid)}/devices/${encodeURIComponent(deviceUid)}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
@@ -183,40 +204,32 @@ export async function updateDeviceStatusApi(
   return res.json();
 }
 
-// ─── 워크플로우(Workflow) API ───
-
-/** 백엔드에서 워크플로우 목록을 가져오는 함수 */
-export async function fetchWorkflowsApi(): Promise<SavedUserWorkflow[]> {
-  const res = await authFetch(`${BASE_URL}/workflows`);
-  if (!res.ok) throw new Error("워크플로우 로드 실패");
-
-  const data = await res.json();
-  return data.map((w: any) => ({
+function workflowFromResponse(w: any): SavedUserWorkflow {
+  return {
     id: w.uid || w.id?.toString(),
     name: w.name,
     nodes: w.flowData ? JSON.parse(w.flowData).nodes || [] : [],
     edges: w.flowData ? JSON.parse(w.flowData).edges || [] : [],
-  }));
+  };
 }
 
-/** 워크플로우 저장 (새로 만들기) */
-export async function saveWorkflowApi(
-  name: string,
-  flowData: string
-): Promise<void> {
+export async function fetchWorkflowsApi(): Promise<SavedUserWorkflow[]> {
+  const res = await authFetch(`${BASE_URL}/workflows`);
+  if (!res.ok) throw new Error("워크플로우 로드 실패");
+  const data = await res.json();
+  return data.map(workflowFromResponse);
+}
+
+export async function saveWorkflowApi(name: string, flowData: string): Promise<SavedUserWorkflow> {
   const res = await authFetch(`${BASE_URL}/workflows`, {
     method: "POST",
     body: JSON.stringify({ name, flowData }),
   });
   if (!res.ok) throw new Error("저장 실패");
+  return workflowFromResponse(await res.json());
 }
 
-/** 워크플로우 수정 (기존 것 업데이트) */
-export async function updateWorkflowApi(
-  id: string,
-  name: string,
-  flowData: string
-): Promise<void> {
+export async function updateWorkflowApi(id: string, name: string, flowData: string): Promise<void> {
   const res = await authFetch(`${BASE_URL}/workflows/${id}`, {
     method: "PUT",
     body: JSON.stringify({ name, flowData }),
@@ -224,7 +237,6 @@ export async function updateWorkflowApi(
   if (!res.ok) throw new Error("수정 실패");
 }
 
-/** 워크플로우 삭제 */
 export async function deleteWorkflowApi(id: string): Promise<void> {
   const res = await authFetch(`${BASE_URL}/workflows/${id}`, {
     method: "DELETE",
@@ -232,7 +244,6 @@ export async function deleteWorkflowApi(id: string): Promise<void> {
   if (!res.ok) throw new Error("삭제 실패");
 }
 
-/** 워크플로우 배포 */
 export async function deployWorkflowApi(id: string): Promise<void> {
   const res = await authFetch(`${BASE_URL}/workflows/${id}/deploy`, {
     method: "POST",
@@ -240,12 +251,7 @@ export async function deployWorkflowApi(id: string): Promise<void> {
   if (!res.ok) throw new Error("배포 실패");
 }
 
-// ─── 템플릿(Template) API ───
-
-/** 템플릿 목록 조회 (작물별 필터 지원) — FR-TPL-001 */
-export async function fetchTemplatesApi(
-  cropType?: string
-): Promise<TemplateItem[]> {
+export async function fetchTemplatesApi(cropType?: string): Promise<TemplateItem[]> {
   const url = cropType
     ? `${BASE_URL}/templates?crop_type=${cropType}`
     : `${BASE_URL}/templates`;
@@ -265,11 +271,41 @@ export async function fetchTemplatesApi(
   }));
 }
 
-/** 템플릿 적용 — FR-TPL-002: 워크플로우 + 스케줄 세트 복사 생성 */
-export async function applyTemplateApi(templateId: string): Promise<void> {
+export async function applyTemplateApi(templateId: string): Promise<SavedUserWorkflow> {
+  const greenhouseUid = requireActiveGreenhouseUid();
   const res = await authFetch(`${BASE_URL}/templates/${templateId}/apply`, {
     method: "POST",
-    body: JSON.stringify({ greenhouseUid: "GH-001" }),
+    body: JSON.stringify({ greenhouseUid }),
   });
   if (!res.ok) throw new Error("템플릿 적용 실패");
+  return workflowFromResponse(await res.json());
+}
+
+export async function fetchDashboardMetricsApi(
+  greenhouseUid = getActiveGreenhouseUid()
+): Promise<DashboardMetric[]> {
+  const params = greenhouseUid ? `?${new URLSearchParams({ greenhouseUid }).toString()}` : "";
+  const res = await authFetch(`${BASE_URL}/dashboard/metrics${params}`);
+  if (!res.ok) throw new Error("대시보드 지표 로드 실패");
+  return res.json();
+}
+
+export async function fetchDashboardAlertsApi(
+  greenhouseUid = getActiveGreenhouseUid()
+): Promise<DashboardAlert[]> {
+  const params = greenhouseUid ? `?${new URLSearchParams({ greenhouseUid }).toString()}` : "";
+  const res = await authFetch(`${BASE_URL}/dashboard/alerts${params}`);
+  if (!res.ok) throw new Error("알림 데이터를 불러올 수 없습니다.");
+  return res.json();
+}
+
+export async function acknowledgeDashboardAlertApi(
+  alertId: string,
+  greenhouseUid = getActiveGreenhouseUid()
+): Promise<void> {
+  const params = greenhouseUid ? `?${new URLSearchParams({ greenhouseUid }).toString()}` : "";
+  const res = await authFetch(`${BASE_URL}/dashboard/alerts/${encodeURIComponent(alertId)}${params}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("알림 확인 처리 실패");
 }

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Search } from "lucide-react";
+import { Search, User } from "lucide-react";
+import { API_BASE_URL } from "../api/api";
 
 export default function FindId() {
   const navigate = useNavigate();
-  const [userEmail, setUserEmail] = useState("");
+  const [userName, setUserName] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,17 +15,18 @@ export default function FindId() {
     setError("");
     setResult(null);
 
-    if (!userEmail.trim()) {
-      setError("이메일을 입력해주세요.");
+    const normalizedName = userName.trim();
+    if (!normalizedName) {
+      setError("가입할 때 등록한 이름을 입력해주세요.");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/v1/auth/find-id", {
+      const res = await fetch(`${API_BASE_URL}/auth/find-id`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: userEmail }),
+        body: JSON.stringify({ name: normalizedName }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -55,18 +57,18 @@ export default function FindId() {
 
       <div className="auth-card">
         <h2 className="auth-card-title">아이디 찾기</h2>
-        <p className="auth-card-desc">회원가입 시 등록한 이메일로 아이디를 찾을 수 있습니다.</p>
+        <p className="auth-card-desc">회원가입 시 등록한 이름을 입력하면 로그인 이메일을 확인할 수 있습니다.</p>
 
         <form onSubmit={handleFind}>
           <div className="auth-field">
-            <label>이메일</label>
+            <label>이름</label>
             <div className="auth-input-wrap">
-              <Mail size={16} className="auth-input-icon" />
+              <User size={16} className="auth-input-icon" />
               <input
-                type="email"
-                placeholder="example@email.com"
-                value={userEmail}
-                onChange={(e) => setUserEmail(e.target.value)}
+                type="text"
+                placeholder="가입한 이름을 입력해주세요"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
               />
             </div>
           </div>
@@ -75,7 +77,7 @@ export default function FindId() {
 
           {result && (
             <div className="auth-result">
-              <p className="auth-result-label">찾은 아이디</p>
+              <p className="auth-result-label">로그인 이메일</p>
               <p className="auth-result-value">{result}</p>
             </div>
           )}

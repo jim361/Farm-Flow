@@ -28,6 +28,10 @@ public class IdGenerator {
         return "FF-" + shortUuid(6);
     }
 
+    public static String generateGreenhouseUid() {
+        return "GH-" + shortUuid(6);
+    }
+
     private static String shortUuid() {
         return shortUuid(4);
     }

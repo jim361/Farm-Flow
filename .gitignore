@@ -32,3 +32,18 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Runtime logs and local generated files ###
+*.log
+*.out.log
+*.err.log
+logs/
+frontend/dist/
+node_modules/
+
+### Local assistant and tunnel runtime files ###
+.claude/
+cloudflared-*.log
+cloudflared.log
+cloudflared-named.log
+cloudflared-farmflow.yml

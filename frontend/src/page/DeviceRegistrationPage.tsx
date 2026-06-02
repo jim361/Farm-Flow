@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   Cloud,
@@ -6,18 +6,19 @@ import {
   Fan,
   Flame,
   Gauge,
-  Wind,
   Settings,
 } from "lucide-react";
 import type { LibraryDevice } from "../App";
 import {
+  API_BASE_URL,
+  authFetch,
+  getActiveGreenhouseUid,
   registerDeviceApi,
   updateDeviceStatusApi,
-  getToken,
 } from "../api/api";
 
-type SensorKind = "temp" | "humidity" | "co2";
-type ControllerKind = "boiler" | "vent" | "pump";
+type SensorKind = "temp" | "humidity" | "co2" | "light";
+type ControllerKind = "fan" | "sprinkler" | "led";
 type DeviceStatus = "ACTIVE" | "INACTIVE" | "ERROR";
 
 type RegisteredDevice = {
@@ -34,35 +35,61 @@ type DeviceRegistrationPageProps = {
   onRegisterDevice: (device: LibraryDevice) => void;
 };
 
+const sensorApiType = (kind: SensorKind | null) => {
+  switch (kind) {
+    case "temp": return "temperature";
+    case "humidity": return "humidity";
+    case "co2": return "co2";
+    case "light": return "light";
+    default: return null;
+  }
+};
+
+const controllerApiType = (kind: ControllerKind | null) => {
+  switch (kind) {
+    case "fan": return "fan";
+    case "sprinkler": return "sprinkler";
+    case "led": return "led";
+    default: return null;
+  }
+};
+
 const sensorIcon = (t?: string | null, size = 20) => {
   switch (t?.toUpperCase()) {
-    case "TEMP": return <Gauge size={size} />;
+    case "TEMP":
+    case "TEMPERATURE": return <Gauge size={size} />;
     case "HUMIDITY": return <Droplets size={size} />;
     case "CO2": return <Cloud size={size} />;
+    case "LIGHT": return <Activity size={size} />;
     default: return <Gauge size={size} />;
   }
 };
+
 const actuatorIcon = (t?: string | null, size = 20) => {
   switch (t?.toUpperCase()) {
-    case "BOILER": return <Flame size={size} />;
-    case "VENT": return <Fan size={size} />;
-    case "PUMP": return <Wind size={size} />;
+    case "FAN": return <Fan size={size} />;
+    case "SPRINKLER": return <Droplets size={size} />;
+    case "LED": return <Flame size={size} />;
     default: return <Settings size={size} />;
   }
 };
+
 const sensorLabel = (t?: string | null) => {
   switch (t?.toUpperCase()) {
-    case "TEMP": return "온도 센서";
+    case "TEMP":
+    case "TEMPERATURE": return "온도 센서";
     case "HUMIDITY": return "습도 센서";
-    case "CO2": return "CO₂ 센서";
+    case "CO2": return "CO2 센서";
+    case "LIGHT": return "조도 센서";
     default: return "센서";
   }
 };
+
 const actuatorLabel = (t?: string | null) => {
   switch (t?.toUpperCase()) {
-    case "BOILER": return "보일러";
-    case "VENT": return "환풍기";
-    case "PUMP": return "관수 펌프";
+    case "FAN": return "환기팬";
+    case "SPRINKLER": return "스프링클러";
+    case "LED": return "보광등";
     default: return "제어기";
   }
 };
@@ -70,28 +97,32 @@ const actuatorLabel = (t?: string | null) => {
 const statusDot = (s: DeviceStatus) =>
   s === "ACTIVE" ? "dev-dot--on" : s === "ERROR" ? "dev-dot--err" : "dev-dot--off";
 
+const statusLabel = (s?: DeviceStatus) =>
+  s === "ACTIVE" ? "정상" : s === "ERROR" ? "오류" : "비활성";
+
 export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationPageProps) {
+  const greenhouseUid = getActiveGreenhouseUid();
   const [sensor, setSensor] = useState<SensorKind | null>(null);
   const [controller, setController] = useState<ControllerKind | null>(null);
-  const [threshold, setThreshold] = useState(28);
   const [sensorName, setSensorName] = useState("");
   const [controllerName, setControllerName] = useState("");
-
+  const [deviceUid, setDeviceUid] = useState("");
+  const [mqttTopic, setMqttTopic] = useState("");
   const [devices, setDevices] = useState<RegisteredDevice[]>([]);
   const [selectedDeviceUid, setSelectedDeviceUid] = useState<string | null>(null);
 
-  /** 기기 목록 조회 — JWT 포함 */
+  const selectedDevice = useMemo(
+    () => devices.find((d) => d.uid === selectedDeviceUid),
+    [devices, selectedDeviceUid],
+  );
+
   const fetchRegisteredDevices = useCallback(async () => {
     try {
-      const token = getToken();
-      const res = await fetch("http://localhost:8080/api/v1/devices", {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      });
+      const uid = getActiveGreenhouseUid();
+      if (!uid) return;
+      const res = await authFetch(`${API_BASE_URL}/greenhouses/${encodeURIComponent(uid)}/devices`);
       if (res.ok) {
-        const data = await res.json();
-        setDevices(data);
+        setDevices(await res.json());
       }
     } catch (err) {
       console.error("기기 목록 조회 실패:", err);
@@ -102,56 +133,75 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
     fetchRegisteredDevices();
   }, [fetchRegisteredDevices]);
 
-  /** FR-DEV-001: 기기 등록 — 백엔드 API 호출 (uid, mqtt_topic 자동생성) */
+  const resetForm = () => {
+    setSensorName("");
+    setControllerName("");
+    setDeviceUid("");
+    setMqttTopic("");
+    setSensor(null);
+    setController(null);
+  };
+
   const handleSubmit = async () => {
     const sn = sensorName.trim();
     const cn = controllerName.trim();
 
     if (!sn && !cn) {
-      alert("센서 또는 제어기 명칭을 입력해주세요.");
+      alert("센서 또는 제어기 이름을 입력해주세요.");
+      return;
+    }
+    if (sn && cn) {
+      alert("센서와 제어기는 한 번에 하나씩 등록해주세요.");
+      return;
+    }
+    if (sn && !sensor) {
+      alert("센서 유형을 선택해주세요.");
+      return;
+    }
+    if (cn && !controller) {
+      alert("제어기 유형을 선택해주세요.");
       return;
     }
 
     const isSensor = sn.length > 0;
-
     const deviceData = {
       name: isSensor ? sn : cn,
       deviceType: isSensor ? "SENSOR" : "ACTUATOR",
-      sensorType: isSensor && sensor ? sensor.toUpperCase() : null,
-      actuatorType: !isSensor && controller ? controller.toUpperCase() : null,
+      uid: deviceUid.trim() || null,
+      sensorType: isSensor ? sensorApiType(sensor) : null,
+      actuatorType: !isSensor ? controllerApiType(controller) : null,
+      mqttTopic: mqttTopic.trim() || null,
     };
 
     try {
       const responseData = await registerDeviceApi(deviceData);
-
-      alert("장치가 성공적으로 등록되었습니다!");
+      alert("장치가 등록되었습니다.");
 
       onRegisterDevice({
         id: responseData.uid,
         name: responseData.name,
         deviceType: responseData.deviceType,
         subtype: responseData.sensorType || responseData.actuatorType || undefined,
+        sensorType: responseData.sensorType || null,
+        actuatorType: responseData.actuatorType || null,
+        mqttTopic: responseData.mqttTopic || null,
+        status: responseData.status || null,
       });
 
-      setSensorName("");
-      setControllerName("");
-      setSensor(null);
-      setController(null);
+      resetForm();
       fetchRegisteredDevices();
     } catch (error: any) {
-      console.error("등록 중 에러 발생:", error);
+      console.error("장치 등록 실패:", error);
       alert(error.message || "서버 연결에 실패했습니다.");
     }
   };
 
-  /** FR-DEV-002: 기기 상태 변경 — 백엔드 API 호출 */
   const handleStatusChange = async (newStatus: DeviceStatus) => {
     if (!selectedDeviceUid) {
       alert("상태를 변경할 장치를 먼저 선택하세요.");
       return;
     }
 
-    // 프론트 상태 먼저 반영 (낙관적 업데이트)
     setDevices((prev) =>
       prev.map((d) =>
         d.uid === selectedDeviceUid ? { ...d, status: newStatus } : d
@@ -162,48 +212,54 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
       await updateDeviceStatusApi(selectedDeviceUid, newStatus);
     } catch (err) {
       console.error("백엔드 상태 동기화 실패:", err);
-      // 실패 시 다시 조회해서 원복
       fetchRegisteredDevices();
     }
   };
-
-  const selectedDevice = devices.find((d) => d.uid === selectedDeviceUid);
 
   return (
     <>
       <div className="ff-page-head">
         <h1 className="ff-title">장치 등록</h1>
         <p className="ff-sub">
-          센서와 제어기를 연결하고 임계값 기반 자동 제어 규칙을 설정합니다.
+          센서와 제어기를 직접 입력해 등록합니다. 시뮬레이터와 연결하려면 같은 장치 UID를 입력하세요.
+        </p>
+        <p className="ff-sub" style={{ marginTop: 4 }}>
+          내 온실 UID: <strong>{greenhouseUid || "미설정"}</strong>
         </p>
       </div>
+
       <div className="dev-layout">
-        {/* ── 왼쪽: 등록 폼 ── */}
         <section className="dev-panel">
           <div className="dev-row-2">
             <div className="dev-field">
-              <label htmlFor="sn">센서 명칭</label>
+              <label htmlFor="sn">센서 이름</label>
               <input
                 id="sn"
-                placeholder="예: 온실 A구역 온도 센서"
+                placeholder="예: A동 온도 센서"
                 value={sensorName}
-                onChange={(e) => setSensorName(e.target.value)}
+                onChange={(e) => {
+                  setSensorName(e.target.value);
+                  if (e.target.value.trim()) setControllerName("");
+                }}
               />
             </div>
             <div className="dev-field">
-              <label htmlFor="cn">제어기 명칭</label>
+              <label htmlFor="cn">제어기 이름</label>
               <input
                 id="cn"
-                placeholder="예: 구역 1 메인 보일러"
+                placeholder="예: A동 환기팬"
                 value={controllerName}
-                onChange={(e) => setControllerName(e.target.value)}
+                onChange={(e) => {
+                  setControllerName(e.target.value);
+                  if (e.target.value.trim()) setSensorName("");
+                }}
               />
             </div>
           </div>
 
           <h3 className="dev-section-title">센서 유형 선택</h3>
           <div className="dev-cards">
-            {(["temp", "humidity", "co2"] as const).map((type) => (
+            {(["temp", "humidity", "co2", "light"] as const).map((type) => (
               <button
                 key={type}
                 type="button"
@@ -216,8 +272,9 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                 {type === "temp" && <Gauge size={28} />}
                 {type === "humidity" && <Droplets size={28} />}
                 {type === "co2" && <Cloud size={28} />}
+                {type === "light" && <Activity size={28} />}
                 <span>
-                  {type === "temp" ? "온도" : type === "humidity" ? "습도" : "CO₂"} 센서
+                  {type === "temp" ? "온도" : type === "humidity" ? "습도" : type === "co2" ? "CO2" : "조도"} 센서
                 </span>
               </button>
             ))}
@@ -225,7 +282,7 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
 
           <h3 className="dev-section-title">제어기 유형 선택</h3>
           <div className="dev-cards">
-            {(["boiler", "vent", "pump"] as const).map((type) => (
+            {(["fan", "sprinkler", "led"] as const).map((type) => (
               <button
                 key={type}
                 type="button"
@@ -235,36 +292,39 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                   setSensor(null);
                 }}
               >
-                {type === "boiler" && <Flame size={28} />}
-                {type === "vent" && <Fan size={28} />}
-                {type === "pump" && <Wind size={28} />}
+                {type === "fan" && <Fan size={28} />}
+                {type === "sprinkler" && <Droplets size={28} />}
+                {type === "led" && <Flame size={28} />}
                 <span>
-                  {type === "boiler" ? "보일러" : type === "vent" ? "환풍기" : "관수 펌프"}
+                  {type === "fan" ? "환기팬" : type === "sprinkler" ? "스프링클러" : "보광등"}
                 </span>
               </button>
             ))}
           </div>
 
-          <div className="dev-logic-box">
-            <span className="dev-badge">활성화됨</span>
-            <h4>작동 시작 온도 (상한 임계값)</h4>
-            <p className="dev-logic-desc">
-              센서 측정값이 설정치를 초과하면 연동된 제어기(환풍기 등)가 자동으로 가동됩니다.
-            </p>
-            <div className="dev-stepper">
-              <button type="button" onClick={() => setThreshold((t) => t - 0.5)}>−</button>
-              <output>{threshold.toFixed(1)} °C</output>
-              <button type="button" onClick={() => setThreshold((t) => t + 0.5)}>+</button>
+          <div className="dev-row-2">
+            <div className="dev-field">
+              <label htmlFor="device-uid">장치 UID</label>
+              <input
+                id="device-uid"
+                placeholder="예: DEV-TEMP"
+                value={deviceUid}
+                onChange={(e) => setDeviceUid(e.target.value)}
+              />
+            </div>
+            <div className="dev-field">
+              <label htmlFor="mqtt-topic">MQTT 토픽</label>
+              <input
+                id="mqtt-topic"
+                placeholder="비워두면 내 온실 UID 기준으로 자동 생성"
+                value={mqttTopic}
+                onChange={(e) => setMqttTopic(e.target.value)}
+              />
             </div>
           </div>
 
           <div className="dev-actions">
-            <button type="button" className="dev-cancel" onClick={() => {
-              setSensorName("");
-              setControllerName("");
-              setSensor(null);
-              setController(null);
-            }}>
+            <button type="button" className="dev-cancel" onClick={resetForm}>
               취소
             </button>
             <button type="button" className="dev-submit" onClick={handleSubmit}>
@@ -273,11 +333,10 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
           </div>
         </section>
 
-        {/* ── 오른쪽: 보유 장치 상태 + 상태 변경 ── */}
         <aside className="dev-side">
           <div className="dev-widget">
             <div className="dev-widget-head"><Activity size={16} /> 보유 장치 현황</div>
-            <p className="dev-widget-subtitle">보유 장치 상태</p>
+            <p className="dev-widget-subtitle">현재 온실에 등록된 장치</p>
 
             {devices.length === 0 && (
               <p className="dev-widget-empty">등록된 장치가 없습니다.</p>
@@ -286,7 +345,7 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
             <div className="dev-device-list">
               {devices.map((d) => (
                 <div
-                  key={d.uid}
+                  key={`${d.uid}-${d.mqttTopic || d.name}`}
                   className={`dev-device-row ${selectedDeviceUid === d.uid ? "dev-device-row--selected" : ""}`}
                   onClick={() => setSelectedDeviceUid(d.uid === selectedDeviceUid ? null : d.uid)}
                 >
@@ -303,7 +362,7 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
                     </span>
                     <strong className="dev-device-name">{d.name}</strong>
                   </div>
-                  <span className={`dev-dot ${statusDot(d.status)}`} />
+                  <span className={`dev-dot ${statusDot(d.status)}`} title={statusLabel(d.status)} />
                 </div>
               ))}
             </div>
@@ -311,7 +370,7 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
 
           <div className="dev-widget">
             <div className="dev-widget-head"><Settings size={16} /> 상태 모드 제어</div>
-            <p className="dev-widget-subtitle">기기 상태 변경</p>
+            <p className="dev-widget-subtitle">선택한 장치의 상태 변경</p>
 
             {selectedDevice ? (
               <p className="dev-status-target">
@@ -319,7 +378,7 @@ export function DeviceRegistrationPage({ onRegisterDevice }: DeviceRegistrationP
               </p>
             ) : (
               <p className="dev-status-target dev-status-target--none">
-                위 목록에서 장치를 선택하세요
+                목록에서 장치를 선택하세요.
               </p>
             )}
 

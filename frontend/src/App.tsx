@@ -150,11 +150,12 @@ function AppBody() {
       const flowData = JSON.stringify({ nodes: g.nodes, edges: g.edges });
 
       if (activeWorkflowId) {
-        // ★ 수정 모드: 기존 워크플로우 업데이트
+        // 수정 모드: 기존 워크플로우 업데이트 후 바로 활성화
         try {
           await updateWorkflowApi(activeWorkflowId, name, flowData);
+          await deployWorkflowApi(activeWorkflowId);
         } catch (err) {
-          console.error("백엔드 수정 API 실패:", err);
+          console.error("워크플로우 수정/적용 실패:", err);
         }
         // 프론트 상태 직접 업데이트 (백엔드 실패해도 반영)
         setUserWorkflows((prev) =>
@@ -165,10 +166,13 @@ function AppBody() {
           )
         );
       } else {
-        // 새로 만들기
+        // 새로 만들기: 저장 성공 시 바로 활성화
         let saved = false;
         try {
-          await saveWorkflowApi(name, flowData);
+          const workflow = await saveWorkflowApi(name, flowData);
+          if (workflow.id) {
+            await deployWorkflowApi(workflow.id);
+          }
           await fetchWorkflows();
           saved = true;
         } catch (err) {
@@ -270,6 +274,8 @@ function AppBody() {
                 pageTitle={builderTitle}
                 initialSnapshot={builderSnapshot}
                 onDeleteLibraryDevices={handleDeleteLibraryDevices}
+                onSave={() => setSafetyOpen(true)}
+                saveLabel={isEditMode ? "수정하기" : "저장하기"}
               />
             }
           />
@@ -288,6 +294,7 @@ function AppBody() {
             element={
               <TemplatePage
                 userWorkflows={userWorkflows}
+                libraryDevices={libraryDevices}
                 onDeleteWorkflow={handleDeleteWorkflow}
                 onApplyUserWorkflow={handleApplyUserWorkflow}
                 onRefreshWorkflows={fetchWorkflows}
@@ -303,6 +310,7 @@ function AppBody() {
         open={safetyOpen}
         onClose={() => setSafetyOpen(false)}
         onConfirmDeploy={handleConfirmSave}
+        initialName={builderTitle}
       />
     </div>
   );

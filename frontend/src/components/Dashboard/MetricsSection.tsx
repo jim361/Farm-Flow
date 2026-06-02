@@ -8,25 +8,100 @@ interface MetricsSectionProps {
   data?: MetricItem[];
   isLoading?: boolean;
   onRefreshAll?: () => void;
+  lastUpdatedAt?: string;
+  sourceLabel?: string;
+  isLive?: boolean;
 }
 
-const MetricsSection = ({ data = metricsNow, isLoading = false, onRefreshAll }: MetricsSectionProps) => {
+const RefreshIcon = ({ spinning }: { spinning: boolean }) => (
+  <svg
+    width="14" height="14" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+    style={{ animation: spinning ? 'ff-spin 0.8s linear infinite' : 'none' }}
+  >
+    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+    <path d="M21 3v5h-5" />
+    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+    <path d="M3 21v-5h5" />
+  </svg>
+);
+
+const MetricsSection = ({
+  data = metricsNow,
+  isLoading = false,
+  onRefreshAll,
+  lastUpdatedAt,
+  sourceLabel = 'Redis dashboard:metrics',
+  isLive = true,
+}: MetricsSectionProps) => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      {/* 한글 주석: 센서 데이터 통합 갱신 버튼 */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          className="ff-btn-save"
-          onClick={onRefreshAll}
-          disabled={isLoading}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {/* 상태 바 */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          flexWrap: 'wrap',
+          padding: '0 2px',
+        }}
+      >
+        {/* 라이브 상태 뱃지 */}
+        <span
           style={{
-            minHeight: '40px',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.85 : 1,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '7px',
+            padding: '6px 11px',
+            borderRadius: '999px',
+            background: isLive ? '#ecfdf5' : '#fff7ed',
+            color: isLive ? '#047857' : '#b45309',
+            border: `1px solid ${isLive ? '#bbf7d0' : '#fed7aa'}`,
+            fontSize: '13px',
+            fontWeight: 700,
           }}
         >
-          {isLoading ? '데이터 통합 갱신 중...' : '데이터 통합 갱신'}
+          <span
+            style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '999px',
+              background: isLive ? '#22c55e' : '#f97316',
+              boxShadow: isLive ? '0 0 0 4px rgba(34, 197, 94, 0.16)' : 'none',
+              flexShrink: 0,
+            }}
+          />
+          {isLive ? '센서 데이터 수신 중' : 'Mock 데이터 표시'}
+        </span>
+
+        <span style={{ color: '#475569', fontSize: '13px' }}>소스: {sourceLabel}</span>
+        {lastUpdatedAt && (
+          <span style={{ color: '#475569', fontSize: '13px' }}>마지막 수신 {lastUpdatedAt}</span>
+        )}
+
+        {/* 새로고침 아이콘 버튼 */}
+        <button
+          type="button"
+          onClick={onRefreshAll}
+          disabled={isLoading}
+          title="데이터 새로고침"
+          style={{
+            marginLeft: 'auto',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0',
+            background: '#f8fafc',
+            color: '#64748b',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            opacity: isLoading ? 0.6 : 1,
+            flexShrink: 0,
+          }}
+        >
+          <RefreshIcon spinning={isLoading} />
         </button>
       </div>
 

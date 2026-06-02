@@ -1,12 +1,13 @@
-// 역할: 스케줄러 페이지에서 공통으로 사용하는 타입 정의 파일입니다.
+export type ScheduleCategory = "관수" | "환기" | "영양" | "조명" | "점검";
 
 export interface ScheduleEventItem {
   id: string;
   title: string;
   date: string;
+  endDate: string;
   startTime: string;
   endTime: string;
-  category: '환기' | '관수' | '조명' | '점검';
+  category: ScheduleCategory;
   note?: string;
 }
 
@@ -19,8 +20,10 @@ export interface TodoItem {
 
 export interface EventEditPayload {
   title: string;
+  date: string;
+  endDate: string;
   startTime: string;
   endTime: string;
-  category: ScheduleEventItem['category'];
+  category: ScheduleCategory;
   note?: string;
 }

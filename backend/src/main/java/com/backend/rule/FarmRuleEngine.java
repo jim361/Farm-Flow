@@ -20,6 +20,12 @@ public class FarmRuleEngine {
 
     private final RulesEngine rulesEngine;
 
+    // 싱글턴 인스턴스 유지 — 내부 상태(fanOn 등 hysteresis)가 호출 간 보존됨
+    private final Co2Rule co2Rule = new Co2Rule();
+    private final TemperatureRule temperatureRule = new TemperatureRule();
+    private final HumidityRule humidityRule = new HumidityRule();
+    private final LightRule lightRule = new LightRule();
+
     @Autowired(required = false)
     private TracingService tracingService;
 
@@ -40,10 +46,10 @@ public class FarmRuleEngine {
         ControlCommand cmd = new ControlCommand();
 
         Rules rules = new Rules();
-        rules.register(new Co2Rule());
-        rules.register(new TemperatureRule());
-        rules.register(new HumidityRule());
-        rules.register(new LightRule());
+        rules.register(co2Rule);
+        rules.register(temperatureRule);
+        rules.register(humidityRule);
+        rules.register(lightRule);
 
         Facts facts = new Facts();
         facts.put("sensorData", data);

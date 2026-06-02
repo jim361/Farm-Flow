@@ -12,10 +12,11 @@
 -- 1. 사용자 테이블
 CREATE TABLE users (
     id            BIGSERIAL PRIMARY KEY,
-    uid           VARCHAR(20) UNIQUE NOT NULL,
+    uid           VARCHAR(40) NOT NULL,
     email         VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     name          VARCHAR(100) NOT NULL,
+    greenhouse_uid VARCHAR(20) UNIQUE NOT NULL,
     role          VARCHAR(20) DEFAULT 'USER',
     created_at    TIMESTAMP DEFAULT NOW(),
     updated_at    TIMESTAMP DEFAULT NOW()
@@ -152,9 +153,10 @@ CREATE TABLE alert_logs (
 
 -- 인덱스
 CREATE UNIQUE INDEX idx_users_uid        ON users(uid);
+CREATE UNIQUE INDEX idx_users_greenhouse_uid ON users(greenhouse_uid);
 CREATE UNIQUE INDEX idx_farms_uid        ON farms(uid);
 CREATE UNIQUE INDEX idx_greenhouses_uid  ON greenhouses(uid);
-CREATE UNIQUE INDEX idx_devices_uid      ON devices(uid);
+CREATE INDEX idx_devices_uid             ON devices(uid);
 CREATE UNIQUE INDEX idx_workflows_uid    ON workflows(uid);
 CREATE UNIQUE INDEX idx_deploys_uid      ON workflow_deploys(uid);
 CREATE UNIQUE INDEX idx_schedules_uid    ON workflow_schedules(uid);
@@ -172,8 +174,8 @@ VALUES
     ('strawberry', 'light',       'ALL', 2000, 50000, 15000, 40000, 0, 70000, 'lux', 'smartfarm_korea_2024');
 
 -- init.sql 하단에 추가
-INSERT INTO users (uid, email, password_hash, name, role)
-VALUES ('USER-001', 'test@test.com', '1234', '테스트유저', 'ADMIN');
+INSERT INTO users (uid, email, password_hash, name, greenhouse_uid, role)
+VALUES ('USER-001', 'test@test.com', '1234', '테스트유저', 'GH-001', 'ADMIN');
 
 INSERT INTO farms (uid, user_id, name)
 VALUES ('FARM-001', 1, '제 1 농장');

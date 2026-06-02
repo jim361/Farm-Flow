@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Search } from "lucide-react";
+import { API_BASE_URL } from "../api/api";
 
 export default function FindPw() {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function FindPw() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/v1/auth/find-pw", {
+      const res = await fetch(`${API_BASE_URL}/auth/find-pw`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
